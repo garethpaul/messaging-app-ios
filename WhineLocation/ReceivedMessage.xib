@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="6751" systemVersion="14C1514" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6736"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" rowHeight="109" id="L0a-4q-5RC" customClass="ReceievedMessageCell" customModule="WhineLocation" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="426" height="109"/>
+            <autoresizingMask key="autoresizingMask"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="L0a-4q-5RC" id="79A-y5-UVr">
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <view contentMode="scaleToFill" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wce-w7-hMj">
+                        <rect key="frame" x="-35" y="25" width="103" height="58"/>
+                        <color key="backgroundColor" red="0.0" green="0.51372549020000002" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                    </view>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Hello" lineBreakMode="tailTruncation" numberOfLines="5" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qac-bL-oBA">
+                        <rect key="frame" x="8" y="44" width="40" height="21"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <color key="textColor" red="0.97715157085757576" green="0.97715157085757576" blue="0.97715157085757576" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="highlightedColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Time" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xVR-ua-has">
+                        <rect key="frame" x="8" y="81" width="164" height="19"/>
+                        <constraints>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="103" id="B8s-SK-Iya"/>
+                            <constraint firstAttribute="width" constant="170" id="bPC-fK-9vW"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" name="HelveticaNeue" family="Helvetica Neue" pointSize="10"/>
+                        <color key="textColor" red="0.31547900880000002" green="0.31547900880000002" blue="0.31547900880000002" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                        <variation key="default">
+                            <mask key="constraints">
+                                <exclude reference="B8s-SK-Iya"/>
+                            </mask>
+                        </variation>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstAttribute="centerX" secondItem="xVR-ua-has" secondAttribute="centerX" id="7Wf-lY-fZV"/>
+                    <constraint firstItem="xVR-ua-has" firstAttribute="leading" secondItem="79A-y5-UVr" secondAttribute="leadingMargin" constant="10" id="Ayn-ug-HLI"/>
+                    <constraint firstItem="xVR-ua-has" firstAttribute="leading" secondItem="79A-y5-UVr" secondAttribute="leadingMargin" id="Bh5-c9-TXI"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="leading" secondItem="79A-y5-UVr" secondAttribute="leadingMargin" constant="-43" id="D8u-GU-vIZ"/>
+                    <constraint firstAttribute="centerY" secondItem="qac-bL-oBA" secondAttribute="centerY" id="JPH-f4-7yW"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="top" secondItem="79A-y5-UVr" secondAttribute="topMargin" constant="49" id="K7R-hl-vkt"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="xVR-ua-has" secondAttribute="bottom" constant="11" id="NDf-yT-Kch"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="top" secondItem="xVR-ua-has" secondAttribute="bottom" constant="10" id="Om0-rm-hd4"/>
+                    <constraint firstItem="xVR-ua-has" firstAttribute="bottom" secondItem="79A-y5-UVr" secondAttribute="bottomMargin" id="SLS-vd-921"/>
+                    <constraint firstAttribute="bottom" secondItem="wce-w7-hMj" secondAttribute="bottom" constant="2" id="Wgh-Ei-VoM"/>
+                    <constraint firstItem="xVR-ua-has" firstAttribute="top" secondItem="79A-y5-UVr" secondAttribute="topMargin" constant="20" id="Wgt-Iv-Ehe"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="top" secondItem="xVR-ua-has" secondAttribute="bottom" constant="10" id="bRg-io-kIc"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="top" secondItem="xVR-ua-has" secondAttribute="bottom" constant="100" id="fES-SP-OIW"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="top" secondItem="79A-y5-UVr" secondAttribute="topMargin" constant="17" id="lMd-eP-22W"/>
+                    <constraint firstItem="xVR-ua-has" firstAttribute="leading" secondItem="79A-y5-UVr" secondAttribute="leadingMargin" id="pSg-K1-gxm"/>
+                    <constraint firstItem="wce-w7-hMj" firstAttribute="centerY" secondItem="79A-y5-UVr" secondAttribute="centerY" id="q8C-qn-UFH"/>
+                    <constraint firstItem="qac-bL-oBA" firstAttribute="leading" secondItem="79A-y5-UVr" secondAttribute="leadingMargin" id="rKl-CL-MaJ"/>
+                    <constraint firstAttribute="centerY" secondItem="xVR-ua-has" secondAttribute="centerY" id="slm-zC-i2x"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="wce-w7-hMj" secondAttribute="trailing" constant="350" id="ym7-IK-7vH"/>
+                </constraints>
+                <variation key="default">
+                    <mask key="constraints">
+                        <exclude reference="K7R-hl-vkt"/>
+                        <exclude reference="Om0-rm-hd4"/>
+                        <exclude reference="Wgh-Ei-VoM"/>
+                        <exclude reference="bRg-io-kIc"/>
+                        <exclude reference="fES-SP-OIW"/>
+                        <exclude reference="ym7-IK-7vH"/>
+                        <exclude reference="7Wf-lY-fZV"/>
+                        <exclude reference="Ayn-ug-HLI"/>
+                        <exclude reference="NDf-yT-Kch"/>
+                        <exclude reference="Wgt-Iv-Ehe"/>
+                        <exclude reference="pSg-K1-gxm"/>
+                        <exclude reference="slm-zC-i2x"/>
+                    </mask>
+                </variation>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="messageLabel" destination="qac-bL-oBA" id="Id8-mr-61G"/>
+                <outlet property="timeLabel" destination="xVR-ua-has" id="l6A-Bv-1tF"/>
+                <outlet property="wrapMessage" destination="wce-w7-hMj" id="Wd6-IN-mJj"/>
+            </connections>
+            <point key="canvasLocation" x="315" y="530.5"/>
+        </tableViewCell>
+    </objects>
+</document>
