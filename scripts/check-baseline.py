@@ -85,6 +85,8 @@ def main():
         "WhineLocation/ShareLocation.swift",
         "WhineLocation/CoreLocationController.swift",
         "WhineLocation/HomeTimeViewController.swift",
+        "WhineLocation/WaitingViewController.swift",
+        "WhineLocation/PulseViewController.swift",
         "WhineLocation/Dictionary.swift",
         "WhineLocation/Base.lproj/Main.storyboard",
         "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -125,6 +127,8 @@ def main():
     share_location = read("WhineLocation/ShareLocation.swift")
     home_time = read("WhineLocation/HomeTimeViewController.swift")
     core_location = read("WhineLocation/CoreLocationController.swift")
+    waiting = read("WhineLocation/WaitingViewController.swift")
+    pulse = read("WhineLocation/PulseViewController.swift")
     readme = read("README.md")
     vision = read("VISION.md")
     security = read("SECURITY.md")
@@ -180,6 +184,11 @@ def main():
     require("as? CLBeacon" in core_location and "locations.last as? CLLocation" in core_location,
             "CoreLocationController must guard beacon and location casts",
             failures)
+    for path, source in [
+        ("WhineLocation/WaitingViewController.swift", waiting),
+        ("WhineLocation/PulseViewController.swift", pulse),
+    ]:
+        require("println(" not in source, f"{path} must not log message, phone, or network data", failures)
 
     for forbidden in ["Info.plist\n", "*.plist"]:
         require(forbidden not in gitignore, ".gitignore must not ignore committed plist baselines", failures)

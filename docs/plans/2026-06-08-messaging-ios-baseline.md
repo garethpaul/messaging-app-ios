@@ -16,8 +16,9 @@ identity/location data through GET query strings.
   backend endpoint keys, and location permission strings.
 - GET requests put phone identifiers, user identifiers, hometime, beacon, and
   location values into URLs.
-- Location debug logging and force casts can expose behavior or crash on
-  malformed location/beacon delegate inputs.
+- Location, waiting, and pulse debug logging can expose behavior or private
+  messaging state; force casts can crash on malformed location/beacon delegate
+  inputs.
 
 ## Work Completed
 
@@ -28,7 +29,7 @@ identity/location data through GET query strings.
 - Added `WhineLocation/ServiceKeys.xcconfig.example` and safer ignore rules for
   local config.
 - Switched first-party identity/location update requests to POST.
-- Removed location debug logging and guarded location/beacon casts.
+- Removed location, waiting, and pulse debug logging and guarded location/beacon casts.
 - Added `Makefile` and `scripts/check-baseline.py` for non-Xcode static checks.
 
 ## Verification

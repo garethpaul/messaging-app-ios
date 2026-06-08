@@ -6,5 +6,5 @@
 - Restored a committed `WhineLocation/Info.plist` with placeholder Fabric/Twitter keys and documented backend endpoint keys.
 - Added `WhineLocation/ServiceKeys.xcconfig.example` for local credential setup.
 - Switched first-party user, location, hometime, and beacon updates from GET to POST.
-- Removed location debug logging and guarded beacon/location casts in `CoreLocationController`.
+- Removed location, waiting, and pulse debug logging and guarded beacon/location casts in `CoreLocationController`.
 - Added `make check` static baseline verification.

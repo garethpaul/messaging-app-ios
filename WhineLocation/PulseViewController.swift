@@ -48,7 +48,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         
         Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": Digits.sharedInstance().session().userID]).responseJSON { (req, res, json, error) in
             if (error != nil) {
-                println(error)
+                self.refreshControl.endRefreshing()
             } else {
                 var json = JSON(json!)
 
@@ -73,7 +73,6 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
                     if let _dataRead = subJson["isRead"].string {
                         self.dataRead.append(_dataRead)
-                        println(_dataRead)
                     }
                 }
 

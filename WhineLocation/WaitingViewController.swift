@@ -32,9 +32,7 @@ class WaitingViewController: UIViewController {
             let userId = Digits.sharedInstance().session().userID
             let userPhoneNumber = Digits.sharedInstance().session().phoneNumber
             Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": userPhoneNumber]).responseJSON { (req, res, json, error) in
-                if (error != nil) {
-                    println("Error: \(error)")
-                } else {
+                if (error == nil) {
                     var json = JSON(json!)
                     if let match = json["match"].string {
                         if match == "True" {
@@ -50,4 +48,3 @@ class WaitingViewController: UIViewController {
     }
 
 }
-
