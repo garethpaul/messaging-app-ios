@@ -18,6 +18,6 @@ class ShareLocation {
         if Digits.sharedInstance().session() != nil {
             userId = Digits.sharedInstance().session().userID
         }
-        Alamofire.request(.GET, "https://requestlabs.appspot.com/whine/location", parameters: ["lat": lat, "lng": lng, "userId": userId])
+        Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location", parameters: ["lat": lat, "lng": lng, "userId": userId])
     }
 }

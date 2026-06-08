@@ -12,6 +12,8 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
+- `CHANGES.md` - recent maintenance changes
+- `Makefile` - local static verification entry point
 - `Podfile` - Apple platform dependency metadata
 - `Crashlytics.framework` - source or example code
 - `DigitsKit.framework` - source or example code
@@ -23,6 +25,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `VISION.md` - project direction and maintenance guardrails
 - `WhineLocation` - source or example code
 - `WhineLocation.xcodeproj` - Xcode project file
+- `scripts/check-baseline.py` - static credential and project wiring checks
 
 Additional scan context:
 
@@ -36,6 +39,7 @@ Additional scan context:
 ### Prerequisites
 
 - Git
+- Python 3 for static verification with `make check`
 - macOS with Xcode for building Apple platform projects
 - CocoaPods if dependencies need to be installed
 
@@ -44,6 +48,7 @@ Additional scan context:
 ```bash
 git clone https://github.com/garethpaul/messaging-app-ios.git
 cd messaging-app-ios
+make check
 pod install
 ```
 
@@ -52,9 +57,12 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Running or Using the Project
 
 - Open `WhineLocation.xcodeproj` in Xcode, choose the app or sample scheme, and run it on the matching simulator/device.
+- Supply `FABRIC_API_KEY`, `CRASHLYTICS_BUILD_SECRET`, `TWITTER_CONSUMER_KEY`, and `TWITTER_CONSUMER_SECRET` through CI settings, local Xcode build settings, or an ignored xcconfig copied from `WhineLocation/ServiceKeys.xcconfig.example`.
+- `WhineLocation/Info.plist` is tracked with placeholder-safe service keys and backend endpoint values; missing plist-backed values make `getInfo` return an empty value instead of force-unwrapping.
 
 ## Testing and Verification
 
+- `make check` runs `scripts/check-baseline.py`, which verifies project wiring, credential placeholders, `ServiceKeys.xcconfig.example`, and plist lookup guardrails.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -62,6 +70,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Configuration and Secrets
 
 - Detected references to Twitter. Keep API keys, OAuth credentials, tokens, and account-specific values in local configuration only.
+- Keep `WhineLocation/Info.plist` tracked with placeholder-safe metadata and privacy usage descriptions.
+- Do not commit Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, message fixtures, phone identity data, or location data.
 
 ## Security and Privacy Notes
 
@@ -75,6 +85,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Maintenance Notes
 
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
+- Run `make check` before pushing project, plist, credential, backend URL, Swift, or documentation changes.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

@@ -23,24 +23,18 @@ class CoreLocationController : NSObject, CLLocationManagerDelegate {
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation // Accurate within a kilometer
         self.locationManager.activityType = CLActivityType.OtherNavigation
         self.locationManager.requestAlwaysAuthorization()
-        println("setup location")
     }
 
     func locationManager(manager: CLLocationManager!, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
-        println("didChangeAuthorizationStatus")
-
         switch status {
         case .NotDetermined:
-            println(".NotDetermined")
             break
             
 
         case .Denied:
-            println(".Denied")
             break
 
         default:
-            println("Unhandled authorization status")
             break
 
         }
@@ -49,30 +43,24 @@ class CoreLocationController : NSObject, CLLocationManagerDelegate {
     // This is where all the magic happens for determing whether to render the Tweets
     func locationManager(manager: CLLocationManager!, didRangeBeacons beacons: [AnyObject]!, inRegion region: CLBeaconRegion!) {
 
-        //println(beacons)
-
         let knownBeacons = beacons.filter{ $0.proximity != CLProximity.Unknown }
         if (knownBeacons.count > 0) {
-            let closestBeacon = knownBeacons[0] as! CLBeacon
+            if let closestBeacon = knownBeacons[0] as? CLBeacon {
 
             // Set the proximity
             let proximity = closestBeacon.proximity.rawValue
-            println("proximity")
-            println(proximity)
 
-            Alamofire.request(.GET, getInfo("beaconUrl"), parameters: ["beacon": region.identifier])
+            Alamofire.request(.POST, getInfo("beaconUrl"), parameters: ["beacon": region.identifier])
 
             // If the proximity does not equal the prev value set the user has become closer or further away from the beacon
             if prev != closestBeacon.proximity.rawValue {
 
                 // If the proximity is very close - we should show some TV tweets
                 if (proximity == 1){
-                    println("in the house")
                 }
 
                     // If the proximity is further away.
                 else if proximity == 2 {
-                    println("in the house")
 
                     // If the previous value was 1 aka close then we need to start again remove the tweets and wait for the
                     // user to come back in range.
@@ -83,6 +71,7 @@ class CoreLocationController : NSObject, CLLocationManagerDelegate {
                 // set previous value
                 prev = proximity
             }
+            }
 
         }
     }
@@ -90,12 +79,13 @@ class CoreLocationController : NSObject, CLLocationManagerDelegate {
 
     func locationManager(manager: CLLocationManager!, didUpdateLocations locations: [AnyObject]!) {
 
-      let location = locations.last as! CLLocation
+      if let location = locations.last as? CLLocation {
         location.coordinate.latitude
         let lat = "\(location.coordinate.latitude)"
         let lng = "\(location.coordinate.longitude)"
         let share = ShareLocation()
         share.location(lat, lng: lng)
+      }
     }
     
 }

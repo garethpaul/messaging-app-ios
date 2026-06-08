@@ -10,8 +10,13 @@ import Foundation
 //
 
 func getInfo(str: String) -> String {
-    let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
-    let dict = NSDictionary(contentsOfFile: path!)
-    let value = dict!.valueForKey(str) as? String
-    return value!
+    if let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist") {
+        if let dict = NSDictionary(contentsOfFile: path) {
+            if let value = dict.valueForKey(str) as? String {
+                return value
+            }
+        }
+    }
+
+    return ""
 }

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7F469FB51B0C15120014B8FE /* DigitsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F469FB41B0C15120014B8FE /* DigitsKit.framework */; };
 		7F4A3C391B0C0916003660AC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4A3C381B0C0916003660AC /* AppDelegate.swift */; };
 		7F7AE4F21B0C0F0000E1768E /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7AE4F11B0C0F0000E1768E /* SwiftyJSON.swift */; };
 		7F7AE5131B0C113F00E1768E /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F7AE5101B0C113F00E1768E /* Crashlytics.framework */; };
@@ -59,7 +58,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		7F469FB41B0C15120014B8FE /* DigitsKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DigitsKit.framework; path = ../../../../Desktop/DigitsKit.framework; sourceTree = "<group>"; };
 		7F4A3C381B0C0916003660AC /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7F7AE4F11B0C0F0000E1768E /* SwiftyJSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftyJSON.swift; sourceTree = "<group>"; };
 		7F7AE5101B0C113F00E1768E /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Crashlytics.framework; sourceTree = "<group>"; };
@@ -110,7 +108,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F469FB51B0C15120014B8FE /* DigitsKit.framework in Frameworks */,
 				FDFF372F1AC79EC8008C05B0 /* MapKit.framework in Frameworks */,
 				7F7AE5131B0C113F00E1768E /* Crashlytics.framework in Frameworks */,
 				FD9076C11AC771B800145FDA /* CoreLocation.framework in Frameworks */,
@@ -165,7 +162,6 @@
 		FD9076921AC770FF00145FDA = {
 			isa = PBXGroup;
 			children = (
-				7F469FB41B0C15120014B8FE /* DigitsKit.framework */,
 				7F7AE5161B0C117A00E1768E /* TwitterCore.framework */,
 				7F7AE5101B0C113F00E1768E /* Crashlytics.framework */,
 				7F7AE5111B0C113F00E1768E /* DigitsKit.framework */,
@@ -408,7 +404,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "./Fabric.framework/run abb870ac2c6cd77fc0a3ee166f786a86748f4eb9 47d331d25396fd56e08c5c5891c16a003ba5647e584bf8fc07feb0e8ae92ab92";
+			shellScript = "if [ -n \"$FABRIC_API_KEY\" ] && [ -n \"$CRASHLYTICS_BUILD_SECRET\" ]; then\n  ./Fabric.framework/run \"$FABRIC_API_KEY\" \"$CRASHLYTICS_BUILD_SECRET\"\nelse\n  echo \"Skipping Fabric run script: set FABRIC_API_KEY and CRASHLYTICS_BUILD_SECRET.\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -554,15 +550,13 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					/private/tmp/HomeBeacon,
-					/Users/gareth/tmp/df,
-					/Users/gareth/Desktop,
 				);
 				INFOPLIST_FILE = WhineLocation/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.garethpaul.WhineLocation;
 				PRODUCT_NAME = WhineLocation;
 				PROVISIONING_PROFILE = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "/Users/gareth/Dropbox/workspace/github/WhineLocation/WhineLocation/WhineLocation-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "WhineLocation/WhineLocation-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -576,15 +570,13 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					/private/tmp/HomeBeacon,
-					/Users/gareth/tmp/df,
-					/Users/gareth/Desktop,
 				);
 				INFOPLIST_FILE = WhineLocation/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.garethpaul.WhineLocation;
 				PRODUCT_NAME = WhineLocation;
 				PROVISIONING_PROFILE = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "/Users/gareth/Dropbox/workspace/github/WhineLocation/WhineLocation/WhineLocation-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "WhineLocation/WhineLocation-Bridging-Header.h";
 			};
 			name = Release;
 		};
