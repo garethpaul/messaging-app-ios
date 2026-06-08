@@ -39,7 +39,6 @@ Canonical security policy and reporting:
 
 - [`SECURITY.md`](SECURITY.md)
 
-
 Messages, phone identity, account sessions, and location signals are sensitive.
 The app should avoid logging private content and keep all service credentials in
 local or platform configuration.
