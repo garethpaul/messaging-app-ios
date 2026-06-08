@@ -1,5 +1,8 @@
 ## Messaging App iOS Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 Messaging App iOS is a legacy iOS messaging app backed by Google App Engine and
 using Fabric, TwitterKit, Digits, Parse, Alamofire, and location-related code.
 
