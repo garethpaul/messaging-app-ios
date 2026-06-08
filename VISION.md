@@ -45,3 +45,6 @@ local or platform configuration.
 - Message or location uploads beyond documented user-visible behavior
 - Broad SDK migrations bundled with messaging behavior changes
 - Private message fixtures or account data
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
