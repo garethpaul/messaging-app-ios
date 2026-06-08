@@ -1,5 +1,8 @@
 # messaging-app-ios
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 ## Overview
 
 `garethpaul/messaging-app-ios` is an Apple platform application or Swift sample. An iOS Messaging App 
@@ -84,4 +87,3 @@ Keep changes small and tied to the project that is already present in this repos
 Prior README summary:
 
 > messaging-app-ios <!-- README-OVERVIEW-IMAGE --> An iOS Messaging App This is an app for iOS. This specifically requires Fabric. You can download this via Fabric.io. The backend is entirely written on Google App Engine (GAE). If you have questions please do reach out. @gpj
-
