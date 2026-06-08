@@ -39,7 +39,7 @@ Messages, phone identity, account sessions, and location signals are sensitive.
 The app should avoid logging private content and keep all service credentials in
 local or platform configuration.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Hardcoded service credentials or signing material
 - Message or location uploads beyond documented user-visible behavior
