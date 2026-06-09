@@ -78,6 +78,7 @@ def main():
         "Podfile.lock",
         "docs/plans/2026-06-08-messaging-app-ios-baseline.md",
         "docs/plans/2026-06-08-message-read-state-guards.md",
+        "docs/plans/2026-06-08-digits-user-id-normalization.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -137,6 +138,8 @@ def main():
     security = read("SECURITY.md")
     changes = read("CHANGES.md")
     read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
+    user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
+    user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -178,6 +181,13 @@ def main():
             failures)
     require("currentDigitsUserID()" in messages and "as? NSArray" in messages and "as! NSArray" not in messages,
             "message read-state handling must guard Digits sessions and array casts",
+            failures)
+    require("func normalizedDigitsUserID(userID: String?) -> String?" in messages and
+            "stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())" in messages,
+            "message read-state handling must normalize blank Digits user IDs",
+            failures)
+    require("return normalizedDigitsUserID(session.userID)" in messages,
+            "currentDigitsUserID must use the normalized Digits user ID helper",
             failures)
     require("session().userID" not in messages,
             "message read-state handling must not force a Digits session user ID",
@@ -222,11 +232,20 @@ def main():
         require("read-state" in content.lower(),
                 f"{path} must document message read-state guardrails",
                 failures)
+        require("digits user id normalization" in content.lower(),
+                f"{path} must document Digits user ID normalization",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
+    require("digits user id normalization" in changes.lower(),
+            "CHANGES must record Digits user ID normalization",
+            failures)
     require("status: completed" in read_state_plan,
             "message read-state guard plan must be marked completed",
+            failures)
+    require("status: completed" in user_id_plan,
+            "Digits user ID normalization plan must be marked completed",
             failures)
 
     if failures:

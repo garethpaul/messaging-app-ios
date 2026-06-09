@@ -60,6 +60,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Supply `FABRIC_API_KEY`, `CRASHLYTICS_BUILD_SECRET`, `TWITTER_CONSUMER_KEY`, and `TWITTER_CONSUMER_SECRET` through CI settings, local Xcode build settings, or an ignored xcconfig copied from `WhineLocation/ServiceKeys.xcconfig.example`.
 - `WhineLocation/Info.plist` is tracked with placeholder-safe service keys and backend endpoint values; missing plist-backed values make `getInfo` return an empty value instead of force-unwrapping.
 - Message read-state caching is keyed by the active Digits user and skips updates when the session or remote array shape is unavailable.
+- Digits user ID normalization trims session IDs and skips blank values before message read-state storage changes.
 
 ## Testing and Verification
 
@@ -74,6 +75,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Keep `WhineLocation/Info.plist` tracked with placeholder-safe metadata and privacy usage descriptions.
 - Do not commit Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, message fixtures, phone identity data, or location data.
 - Message read-state changes should preserve guarded Digits session lookup and array casts.
+- Digits user ID normalization should continue to reject blank session IDs before writing local read-state data.
 
 ## Security and Privacy Notes
 

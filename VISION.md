@@ -27,6 +27,7 @@ Priority:
 - Keep Fabric/Twitter/Digits/Parse credential assumptions visible
 - Keep `getInfo` safe when local plist endpoint configuration is absent
 - Keep message read-state updates guarded around Digits sessions and remote data shape
+- Keep Digits user ID normalization in front of message read-state storage
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
@@ -57,8 +58,8 @@ Messages, phone identity, account sessions, and location signals are sensitive.
 The app should avoid logging private content and keep all service credentials in
 local or platform configuration. Fabric/Crashlytics values should be supplied
 through local or CI build settings, not committed Xcode project literals.
-Message read-state updates should keep guarded Digits session lookup and remote
-array parsing before posting state changes.
+Message read-state updates should keep guarded Digits session lookup, Digits
+user ID normalization, and remote array parsing before posting state changes.
 
 ## What We Will Not Merge (For Now)
 

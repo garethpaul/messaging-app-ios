@@ -37,10 +37,22 @@ func compareRead(data:AnyObject!) {
 
 func currentDigitsUserID() -> String? {
     if let session = Digits.sharedInstance().session() {
-        return session.userID
+        return normalizedDigitsUserID(session.userID)
     }
 
     return nil
 }
 
+func normalizedDigitsUserID(userID: String?) -> String? {
+    guard let userID = userID else {
+        return nil
+    }
+
+    let trimmedUserID = userID.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+    if trimmedUserID.characters.count == 0 {
+        return nil
+    }
+
+    return trimmedUserID
+}
 

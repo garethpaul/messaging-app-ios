@@ -38,6 +38,7 @@ Helpful reports include:
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
 - Plist-backed endpoint lookup through `getInfo` should fail closed instead of force-unwrapping missing local configuration.
 - Message read-state updates should guard Digits session lookup and remote array parsing before posting changes.
+- Digits user ID normalization should reject blank session IDs before local message read-state storage changes.
 
 ## Mobile Privacy Notes
 
@@ -45,7 +46,8 @@ If this project requests device permissions such as location, camera, microphone
 
 For this app, reports involving pulse/message read-state behavior should state
 whether malformed remote data or missing Digits sessions can expose or corrupt
-message state.
+message state. Include whether Digits user ID normalization can be bypassed with
+blank or whitespace-only session IDs.
 
 ## Dependency and Supply Chain Security
 
