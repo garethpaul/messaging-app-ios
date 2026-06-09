@@ -13,28 +13,34 @@ import DigitsKit
 let defaults = NSUserDefaults.standardUserDefaults()
 
 func setRead(data: AnyObject) {
-    defaults.setObject(data, forKey: Digits.sharedInstance().session().userID)
+    if let userId = currentDigitsUserID() {
+        defaults.setObject(data, forKey: userId)
+    }
 }
 
 func compareRead(data:AnyObject!) {
-    if let localData: AnyObject! = defaults.objectForKey(Digits.sharedInstance().session().userID) {
-        var localArray = [] as NSArray
-        if localData != nil {
-            localArray = localData as! NSArray
-        }
-        let localCompare = data as! NSArray
+    guard let userId = currentDigitsUserID(),
+        let remoteReadState = data as? NSArray else {
+            return
+    }
 
-        if localArray != localCompare {
+    let localReadState = defaults.objectForKey(userId) as? NSArray ?? NSArray()
 
-            let parameters : [String: AnyObject] = ["data": data, "userId": Digits.sharedInstance().session().userID]
-
-            Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/pulse/messages/read", parameters:["data": data, "userId": Digits.sharedInstance().session().userID], encoding: .JSON)
-            }
-            setRead(data)
-        } else {
-            // all is normal
-        } // end else
+    if localReadState != remoteReadState {
+        Alamofire.request(.POST,
+            "https://requestlabs.appspot.com/whine/pulse/messages/read",
+            parameters:["data": remoteReadState, "userId": userId],
+            encoding: .JSON)
+        setRead(remoteReadState)
+    }
 } // end compare read
 
+func currentDigitsUserID() -> String? {
+    if let session = Digits.sharedInstance().session() {
+        return session.userID
+    }
+
+    return nil
+}
 
 

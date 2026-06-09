@@ -16,7 +16,8 @@ identity, message data, and location behavior explicit.
 Current baseline: `make check` runs `scripts/check-baseline.py` to verify
 legacy CocoaPods and Digits/Fabric/Twitter framework wiring, Fabric/Crashlytics
 placeholder build settings, `ServiceKeys.xcconfig.example`,
-placeholder-safe plist metadata, and `getInfo` fallback behavior.
+placeholder-safe plist metadata, `getInfo` fallback behavior, and message
+read-state guardrails.
 
 The current focus is:
 
@@ -25,6 +26,7 @@ Priority:
 - Preserve the messaging, login, and backend integration structure
 - Keep Fabric/Twitter/Digits/Parse credential assumptions visible
 - Keep `getInfo` safe when local plist endpoint configuration is absent
+- Keep message read-state updates guarded around Digits sessions and remote data shape
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
@@ -43,6 +45,7 @@ Contribution rules:
 - Keep credentials and generated signing files out of git.
 - Run `make check` before pushing project, credential, backend URL, or `getInfo` changes.
 - Document any change that stores or transmits messages or location data.
+- Preserve message read-state guards when changing pulse/message flows.
 
 ## Security And Privacy
 
@@ -54,6 +57,8 @@ Messages, phone identity, account sessions, and location signals are sensitive.
 The app should avoid logging private content and keep all service credentials in
 local or platform configuration. Fabric/Crashlytics values should be supplied
 through local or CI build settings, not committed Xcode project literals.
+Message read-state updates should keep guarded Digits session lookup and remote
+array parsing before posting state changes.
 
 ## What We Will Not Merge (For Now)
 

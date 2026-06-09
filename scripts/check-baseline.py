@@ -77,11 +77,13 @@ def main():
         "Podfile",
         "Podfile.lock",
         "docs/plans/2026-06-08-messaging-app-ios-baseline.md",
+        "docs/plans/2026-06-08-message-read-state-guards.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
         "WhineLocation/ServiceKeys.xcconfig.example",
         "WhineLocation/User.swift",
+        "WhineLocation/Messages.swift",
         "WhineLocation/ShareLocation.swift",
         "WhineLocation/CoreLocationController.swift",
         "WhineLocation/HomeTimeViewController.swift",
@@ -124,6 +126,7 @@ def main():
     info = parse_plist("WhineLocation/Info.plist", failures)
     service_keys = read("WhineLocation/ServiceKeys.xcconfig.example")
     user = read("WhineLocation/User.swift")
+    messages = read("WhineLocation/Messages.swift")
     share_location = read("WhineLocation/ShareLocation.swift")
     home_time = read("WhineLocation/HomeTimeViewController.swift")
     core_location = read("WhineLocation/CoreLocationController.swift")
@@ -133,6 +136,7 @@ def main():
     vision = read("VISION.md")
     security = read("SECURITY.md")
     changes = read("CHANGES.md")
+    read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -168,6 +172,15 @@ def main():
 
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/user"' in user,
             "user registration must use POST",
+            failures)
+    require('Alamofire.request(.POST' in messages and 'messages/read"' in messages,
+            "message read-state updates must use POST",
+            failures)
+    require("currentDigitsUserID()" in messages and "as? NSArray" in messages and "as! NSArray" not in messages,
+            "message read-state handling must guard Digits sessions and array casts",
+            failures)
+    require("session().userID" not in messages,
+            "message read-state handling must not force a Digits session user ID",
             failures)
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
             "location sharing must use POST",
@@ -206,8 +219,14 @@ def main():
         require("message" in content.lower() and "location" in content.lower(),
                 f"{path} must document messaging/location privacy posture",
                 failures)
-    require("Fabric/Crashlytics" in changes and "POST" in changes,
-            "CHANGES must record credential and request-method hardening",
+        require("read-state" in content.lower(),
+                f"{path} must document message read-state guardrails",
+                failures)
+    require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
+            "CHANGES must record credential, request-method, and read-state hardening",
+            failures)
+    require("status: completed" in read_state_plan,
+            "message read-state guard plan must be marked completed",
             failures)
 
     if failures:

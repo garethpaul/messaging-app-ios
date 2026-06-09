@@ -37,10 +37,15 @@ Helpful reports include:
 - Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, phone identity data, messages, and location data should stay out of git.
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
 - Plist-backed endpoint lookup through `getInfo` should fail closed instead of force-unwrapping missing local configuration.
+- Message read-state updates should guard Digits session lookup and remote array parsing before posting changes.
 
 ## Mobile Privacy Notes
 
 If this project requests device permissions such as location, camera, microphone, contacts, Bluetooth, health data, or local storage access, reports should describe the permission involved and whether sensitive data can be accessed, persisted, or transmitted unexpectedly. Please avoid testing against real third-party user data or accounts you do not control.
+
+For this app, reports involving pulse/message read-state behavior should state
+whether malformed remote data or missing Digits sessions can expose or corrupt
+message state.
 
 ## Dependency and Supply Chain Security
 

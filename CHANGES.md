@@ -7,4 +7,5 @@
 - Added `WhineLocation/ServiceKeys.xcconfig.example` for local credential setup.
 - Switched first-party user, location, hometime, and beacon updates from GET to POST.
 - Removed location, waiting, and pulse debug logging and guarded beacon/location casts in `CoreLocationController`.
+- Guarded message read-state updates when Digits sessions or remote array data are unavailable.
 - Added `make check` static baseline verification.
