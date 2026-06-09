@@ -16,7 +16,7 @@ class NewPartnerViewController: UIViewController {
     @IBOutlet var partnerNumber: UITextField!
 
     @IBAction func phoneEditingDidBegin(sender: AnyObject) {
-        partnerNumber.text = "+1"
+        applyPartnerNumberPrefixIfNeeded()
     }
 
     @IBAction func findPartnerBtn(sender: AnyObject) {
@@ -45,6 +45,12 @@ class NewPartnerViewController: UIViewController {
         partnerNumber.keyboardType = UIKeyboardType.DecimalPad
     }
 
+    func applyPartnerNumberPrefixIfNeeded() {
+        let existingPartnerNumber = partnerNumber.text?.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()) ?? ""
+        if existingPartnerNumber.characters.count == 0 {
+            partnerNumber.text = "+1"
+        }
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

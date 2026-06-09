@@ -67,6 +67,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - A Digits login success guard keeps failed authentication callbacks out of the partner flow and stores only normalized user IDs.
 - The location share user guard skips location POSTs when no normalized Digits user ID is available.
 - The new partner user guard skips partner requests when the partner number, normalized Digits user ID, or Digits session is unavailable.
+- Partner prefix preservation keeps the `+1` seed for blank partner numbers
+  without erasing already-entered partner input when the field is focused again.
 
 ## Testing and Verification
 
@@ -88,6 +90,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Digits user ID normalization should continue to reject blank session IDs before writing local read-state data.
 - The Digits login success guard should keep failed authentication callbacks from storing identity or opening the partner flow.
 - The new partner user guard should keep partner requests behind normalized Digits session identities and nonblank partner numbers.
+- Partner prefix preservation should keep already-entered partner numbers intact
+  when the partner field is focused again.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 
 ## Security and Privacy Notes
@@ -106,6 +110,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   project, plist, credential, backend URL, Swift, or documentation changes.
 - See `docs/plans/2026-06-09-make-gate-aliases.md` for the local gate alias
   baseline.
+- See `docs/plans/2026-06-09-partner-prefix-preservation.md` for the partner
+  prefix preservation guardrail.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

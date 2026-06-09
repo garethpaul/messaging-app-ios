@@ -82,6 +82,7 @@ def main():
         "docs/plans/2026-06-09-digits-login-success-guard.md",
         "docs/plans/2026-06-09-location-share-user-guard.md",
         "docs/plans/2026-06-09-make-gate-aliases.md",
+        "docs/plans/2026-06-09-partner-prefix-preservation.md",
         "docs/plans/2026-06-09-new-partner-user-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
@@ -152,6 +153,7 @@ def main():
     login_plan = read("docs/plans/2026-06-09-digits-login-success-guard.md")
     location_share_plan = read("docs/plans/2026-06-09-location-share-user-guard.md")
     make_gate_plan = read("docs/plans/2026-06-09-make-gate-aliases.md")
+    partner_prefix_plan = read("docs/plans/2026-06-09-partner-prefix-preservation.md")
     new_partner_plan = read("docs/plans/2026-06-09-new-partner-user-guard.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
@@ -216,6 +218,13 @@ def main():
     require("func normalizedPartnerNumber(partnerNumber: String?) -> String?" in new_partner and
             "trimmedPartnerNumber.characters.count == 0" in new_partner,
             "new partner flow must normalize and reject blank partner numbers",
+            failures)
+    phone_editing_method = new_partner.split("@IBAction func phoneEditingDidBegin", 1)[1].split("@IBAction func findPartnerBtn", 1)[0]
+    require("applyPartnerNumberPrefixIfNeeded()" in phone_editing_method and
+            'partnerNumber.text = "+1"' not in phone_editing_method and
+            "func applyPartnerNumberPrefixIfNeeded()" in new_partner and
+            "existingPartnerNumber.characters.count == 0" in new_partner,
+            "new partner phone prefix helper must preserve existing partner input",
             failures)
     require("guard let partner = normalizedPartnerNumber(self.partnerNumber.text)" in new_partner and
             "let userId = currentDigitsUserID()" in new_partner and
@@ -287,6 +296,9 @@ def main():
         require("new partner user guard" in content.lower(),
                 f"{path} must document the new partner user guard",
                 failures)
+        require("partner prefix preservation" in content.lower(),
+                f"{path} must document partner prefix preservation",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -301,6 +313,9 @@ def main():
             failures)
     require("new partner user guard" in changes.lower(),
             "CHANGES must record new partner user guard hardening",
+            failures)
+    require("partner prefix preservation" in changes.lower(),
+            "CHANGES must record partner prefix preservation",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -319,6 +334,9 @@ def main():
             failures)
     require("status: completed" in make_gate_plan,
             "Make gate alias plan must be marked completed",
+            failures)
+    require("status: completed" in partner_prefix_plan,
+            "partner prefix preservation plan must be marked completed",
             failures)
     require("status: completed" in new_partner_plan,
             "new partner user guard plan must be marked completed",

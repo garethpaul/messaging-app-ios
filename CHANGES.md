@@ -10,6 +10,8 @@
   open the partner flow or store identity.
 - Added a new partner user guard so partner POSTs require a normalized Digits
   user ID and nonblank partner number.
+- Added partner prefix preservation so focusing the partner field seeds blank
+  values without erasing already-entered numbers.
 
 ## 2026-06-08
 
