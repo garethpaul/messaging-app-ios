@@ -155,10 +155,10 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     @IBAction func sendMsg(sender: AnyObject) {
 
-        if sendAvailable == true {
+        if sendAvailable {
 
             // send Available is False
-            sendAvailable == false
+            sendAvailable = false
 
             // Display button to red when sending
             self.sendBtn.setTitleColor(UIColor.redColor(), forState: UIControlState.Normal)
@@ -178,7 +178,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 self.getData()
 
                 // Set availability to send to true
-                self.sendAvailable == true
+                self.sendAvailable = true
 
                 // Display button back to white
                 self.sendBtn.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)

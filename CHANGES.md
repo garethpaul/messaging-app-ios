@@ -12,6 +12,8 @@
   user ID and nonblank partner number.
 - Added partner prefix preservation so focusing the partner field seeds blank
   values without erasing already-entered numbers.
+- Fixed the pulse send throttle so message sends mark the cooldown state with
+  assignments instead of unused equality checks.
 
 ## 2026-06-08
 

@@ -32,6 +32,7 @@ Priority:
 - Keep the new partner user guard before partner flow backend requests
 - Keep partner prefix preservation from erasing already-entered partner numbers
 - Keep the location share user guard before posting location updates
+- Keep the pulse send throttle from allowing repeat message posts during cooldown
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
 - Avoid committing real credentials, signing material, message data, or location data
@@ -74,6 +75,8 @@ Partner prefix preservation should avoid erasing partially entered partner phone
 numbers when the field is focused again.
 The location share user guard should keep location updates tied to normalized
 Digits session identities.
+The pulse send throttle should keep repeat taps from posting duplicate messages
+while the message list refresh is pending.
 
 ## What We Will Not Merge (For Now)
 

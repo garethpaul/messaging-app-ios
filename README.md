@@ -69,6 +69,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The new partner user guard skips partner requests when the partner number, normalized Digits user ID, or Digits session is unavailable.
 - Partner prefix preservation keeps the `+1` seed for blank partner numbers
   without erasing already-entered partner input when the field is focused again.
+- The pulse send throttle marks message sends unavailable during the short
+  refresh cooldown so repeat taps do not post duplicate messages.
 
 ## Testing and Verification
 
@@ -76,7 +78,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `scripts/check-baseline.py`, which verifies project wiring, credential
   placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
   Digits login success guard, the new partner user guard, the location share
-  user guard, and message read-state guards.
+  user guard, the pulse send throttle, and message read-state guards.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -92,6 +94,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - The new partner user guard should keep partner requests behind normalized Digits session identities and nonblank partner numbers.
 - Partner prefix preservation should keep already-entered partner numbers intact
   when the partner field is focused again.
+- The pulse send throttle should keep repeat message taps behind the cooldown
+  state while a send refresh is pending.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 
 ## Security and Privacy Notes
@@ -112,6 +116,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   baseline.
 - See `docs/plans/2026-06-09-partner-prefix-preservation.md` for the partner
   prefix preservation guardrail.
+- See `docs/plans/2026-06-09-pulse-send-throttle.md` for the pulse send
+  throttle guardrail.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 
