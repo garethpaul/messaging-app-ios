@@ -13,11 +13,11 @@ context lives in [`README.md`](README.md).
 The goal is to keep the prototype understandable while making credentials,
 identity, message data, and location behavior explicit.
 
-Current baseline: `make check` runs `scripts/check-baseline.py` to verify
-legacy CocoaPods and Digits/Fabric/Twitter framework wiring, Fabric/Crashlytics
-placeholder build settings, `ServiceKeys.xcconfig.example`,
-placeholder-safe plist metadata, `getInfo` fallback behavior, and message
-read-state guardrails.
+Current baseline: `make lint`, `make test`, `make build`, and `make check` run
+`scripts/check-baseline.py` to verify legacy CocoaPods and
+Digits/Fabric/Twitter framework wiring, Fabric/Crashlytics placeholder build
+settings, `ServiceKeys.xcconfig.example`, placeholder-safe plist metadata,
+`getInfo` fallback behavior, and message read-state guardrails.
 
 The current focus is:
 
@@ -31,6 +31,7 @@ Priority:
 - Keep the Digits login success guard before partner flow and identity storage
 - Keep the location share user guard before posting location updates
 - Keep state-changing user, location, hometime, and beacon updates on POST
+- Keep local lint, test, build, and check gates on the same static baseline
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
 
@@ -46,7 +47,8 @@ Contribution rules:
 - One PR = one focused auth, messaging, backend, build, or documentation change.
 - Verify app flow after SDK or storyboard changes.
 - Keep credentials and generated signing files out of git.
-- Run `make check` before pushing project, credential, backend URL, or `getInfo` changes.
+- Run `make lint`, `make test`, `make build`, and `make check` before pushing
+  project, credential, backend URL, or `getInfo` changes.
 - Document any change that stores or transmits messages or location data.
 - Preserve message read-state guards when changing pulse/message flows.
 

@@ -48,6 +48,9 @@ Additional scan context:
 ```bash
 git clone https://github.com/garethpaul/messaging-app-ios.git
 cd messaging-app-ios
+make lint
+make test
+make build
 make check
 pod install
 ```
@@ -66,7 +69,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- `make check` runs `scripts/check-baseline.py`, which verifies project wiring, credential placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the Digits login success guard, the location share user guard, and message read-state guards.
+- `make lint`, `make test`, `make build`, and `make check` run
+  `scripts/check-baseline.py`, which verifies project wiring, credential
+  placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
+  Digits login success guard, the location share user guard, and message
+  read-state guards.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -93,7 +100,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Maintenance Notes
 
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
-- Run `make check` before pushing project, plist, credential, backend URL, Swift, or documentation changes.
+- Run `make lint`, `make test`, `make build`, and `make check` before pushing
+  project, plist, credential, backend URL, Swift, or documentation changes.
+- See `docs/plans/2026-06-09-make-gate-aliases.md` for the local gate alias
+  baseline.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

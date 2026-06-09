@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Added `make lint`, `make test`, and `make build` aliases so local gate
+  commands run the same baseline as `make check`.
 - Added a location share user guard so location POSTs require a normalized
   Digits user ID.
 - Added a Digits login success guard so failed authentication callbacks do not

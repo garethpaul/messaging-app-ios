@@ -81,6 +81,7 @@ def main():
         "docs/plans/2026-06-08-digits-user-id-normalization.md",
         "docs/plans/2026-06-09-digits-login-success-guard.md",
         "docs/plans/2026-06-09-location-share-user-guard.md",
+        "docs/plans/2026-06-09-make-gate-aliases.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -141,11 +142,13 @@ def main():
     vision = read("VISION.md")
     security = read("SECURITY.md")
     changes = read("CHANGES.md")
+    makefile = read("Makefile")
     read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
     user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
     user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
     login_plan = read("docs/plans/2026-06-09-digits-login-success-guard.md")
     location_share_plan = read("docs/plans/2026-06-09-location-share-user-guard.md")
+    make_gate_plan = read("docs/plans/2026-06-09-make-gate-aliases.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -237,12 +240,17 @@ def main():
     for expected in ["*.local.xcconfig", "*.secrets.xcconfig", "*.local.plist", "*.secrets.plist", ".env"]:
         require(expected in gitignore, f".gitignore must include {expected}", failures)
 
+    require(".PHONY: build check lint test" in makefile and "lint test build: check" in makefile,
+            "Makefile must expose lint, test, build, and check gate targets",
+            failures)
+
     tracked = tracked_files()
     generated = [path for path in tracked if "xcuserdata" in path or path.endswith(".xcuserstate")]
     require(not generated, "generated Xcode user state must not be tracked: " + ", ".join(generated), failures)
 
     for path, content in [("README.md", readme), ("VISION.md", vision), ("SECURITY.md", security)]:
-        require("make check" in content and "ServiceKeys.xcconfig.example" in content,
+        require("make lint" in content and "make test" in content and "make build" in content and
+                "make check" in content and "ServiceKeys.xcconfig.example" in content,
                 f"{path} must document static checks and local credential setup",
                 failures)
         require("message" in content.lower() and "location" in content.lower(),
@@ -272,6 +280,9 @@ def main():
     require("location share user guard" in changes.lower(),
             "CHANGES must record location share user guard hardening",
             failures)
+    require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
+            "CHANGES must record Make gate aliases",
+            failures)
     require("status: completed" in read_state_plan,
             "message read-state guard plan must be marked completed",
             failures)
@@ -283,6 +294,9 @@ def main():
             failures)
     require("status: completed" in location_share_plan,
             "location share user guard plan must be marked completed",
+            failures)
+    require("status: completed" in make_gate_plan,
+            "Make gate alias plan must be marked completed",
             failures)
 
     if failures:
