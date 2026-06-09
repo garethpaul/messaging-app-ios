@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Added a location share user guard so location POSTs require a normalized
+  Digits user ID.
 - Added a Digits login success guard so failed authentication callbacks do not
   open the partner flow or store identity.
 

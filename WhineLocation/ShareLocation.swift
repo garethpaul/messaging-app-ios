@@ -14,10 +14,10 @@ class ShareLocation {
 
     // Track
     func location(lat: String, lng: String) {
-        var userId = ""
-        if Digits.sharedInstance().session() != nil {
-            userId = Digits.sharedInstance().session().userID
+        guard let userId = currentDigitsUserID() else {
+            return
         }
+
         Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location", parameters: ["lat": lat, "lng": lng, "userId": userId])
     }
 }

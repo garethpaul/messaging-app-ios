@@ -80,6 +80,7 @@ def main():
         "docs/plans/2026-06-08-message-read-state-guards.md",
         "docs/plans/2026-06-08-digits-user-id-normalization.md",
         "docs/plans/2026-06-09-digits-login-success-guard.md",
+        "docs/plans/2026-06-09-location-share-user-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -144,6 +145,7 @@ def main():
     user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
     user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
     login_plan = read("docs/plans/2026-06-09-digits-login-success-guard.md")
+    location_share_plan = read("docs/plans/2026-06-09-location-share-user-guard.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -207,6 +209,11 @@ def main():
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
             "location sharing must use POST",
             failures)
+    require("guard let userId = currentDigitsUserID() else" in share_location and
+            'userId = ""' not in share_location and
+            "session().userID" not in share_location,
+            "location sharing must require a normalized Digits user ID before posting",
+            failures)
     require('Alamofire.request(.POST, getInfo("newHometimeUrl")' in home_time,
             "hometime updates must use POST",
             failures)
@@ -250,6 +257,9 @@ def main():
         require("digits login success guard" in content.lower(),
                 f"{path} must document the Digits login success guard",
                 failures)
+        require("location share user guard" in content.lower(),
+                f"{path} must document the location share user guard",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -259,6 +269,9 @@ def main():
     require("digits login success guard" in changes.lower(),
             "CHANGES must record Digits login success guard hardening",
             failures)
+    require("location share user guard" in changes.lower(),
+            "CHANGES must record location share user guard hardening",
+            failures)
     require("status: completed" in read_state_plan,
             "message read-state guard plan must be marked completed",
             failures)
@@ -267,6 +280,9 @@ def main():
             failures)
     require("status: completed" in login_plan,
             "Digits login success guard plan must be marked completed",
+            failures)
+    require("status: completed" in location_share_plan,
+            "location share user guard plan must be marked completed",
             failures)
 
     if failures:

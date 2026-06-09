@@ -29,6 +29,7 @@ Priority:
 - Keep message read-state updates guarded around Digits sessions and remote data shape
 - Keep Digits user ID normalization in front of message read-state storage
 - Keep the Digits login success guard before partner flow and identity storage
+- Keep the location share user guard before posting location updates
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
@@ -63,6 +64,8 @@ Message read-state updates should keep guarded Digits session lookup, Digits
 user ID normalization, and remote array parsing before posting state changes.
 The Digits login success guard should prevent failed authentication callbacks
 from opening identity-backed app flows.
+The location share user guard should keep location updates tied to normalized
+Digits session identities.
 
 ## What We Will Not Merge (For Now)
 
