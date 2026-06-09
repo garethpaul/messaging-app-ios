@@ -29,6 +29,7 @@ Priority:
 - Keep message read-state updates guarded around Digits sessions and remote data shape
 - Keep Digits user ID normalization in front of message read-state storage
 - Keep the Digits login success guard before partner flow and identity storage
+- Keep the new partner user guard before partner flow backend requests
 - Keep the location share user guard before posting location updates
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
@@ -66,6 +67,8 @@ Message read-state updates should keep guarded Digits session lookup, Digits
 user ID normalization, and remote array parsing before posting state changes.
 The Digits login success guard should prevent failed authentication callbacks
 from opening identity-backed app flows.
+The new partner user guard should keep partner requests tied to normalized
+Digits identities and nonblank partner numbers.
 The location share user guard should keep location updates tied to normalized
 Digits session identities.
 

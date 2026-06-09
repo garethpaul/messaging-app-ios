@@ -82,6 +82,7 @@ def main():
         "docs/plans/2026-06-09-digits-login-success-guard.md",
         "docs/plans/2026-06-09-location-share-user-guard.md",
         "docs/plans/2026-06-09-make-gate-aliases.md",
+        "docs/plans/2026-06-09-new-partner-user-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -89,6 +90,7 @@ def main():
         "WhineLocation/User.swift",
         "WhineLocation/Messages.swift",
         "WhineLocation/LoginViewcontroller.swift",
+        "WhineLocation/NewPartnerViewController.swift",
         "WhineLocation/ShareLocation.swift",
         "WhineLocation/CoreLocationController.swift",
         "WhineLocation/HomeTimeViewController.swift",
@@ -133,6 +135,7 @@ def main():
     user = read("WhineLocation/User.swift")
     messages = read("WhineLocation/Messages.swift")
     login = read("WhineLocation/LoginViewcontroller.swift")
+    new_partner = read("WhineLocation/NewPartnerViewController.swift")
     share_location = read("WhineLocation/ShareLocation.swift")
     home_time = read("WhineLocation/HomeTimeViewController.swift")
     core_location = read("WhineLocation/CoreLocationController.swift")
@@ -149,6 +152,7 @@ def main():
     login_plan = read("docs/plans/2026-06-09-digits-login-success-guard.md")
     location_share_plan = read("docs/plans/2026-06-09-location-share-user-guard.md")
     make_gate_plan = read("docs/plans/2026-06-09-make-gate-aliases.md")
+    new_partner_plan = read("docs/plans/2026-06-09-new-partner-user-guard.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -209,6 +213,18 @@ def main():
     require("else {\n                self.performSegueWithIdentifier(\"NewPartner\"" not in login,
             "Digits login must not segue into the partner flow after failed authentication",
             failures)
+    require("func normalizedPartnerNumber(partnerNumber: String?) -> String?" in new_partner and
+            "trimmedPartnerNumber.characters.count == 0" in new_partner,
+            "new partner flow must normalize and reject blank partner numbers",
+            failures)
+    require("guard let partner = normalizedPartnerNumber(self.partnerNumber.text)" in new_partner and
+            "let userId = currentDigitsUserID()" in new_partner and
+            "let digitsSession = Digits.sharedInstance().session()" in new_partner,
+            "new partner flow must require a normalized current user and Digits session before posting",
+            failures)
+    require("digitsSession.userID" not in new_partner and "session().userID" not in new_partner,
+            "new partner flow must not bypass normalized Digits user ID lookup",
+            failures)
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
             "location sharing must use POST",
             failures)
@@ -268,6 +284,9 @@ def main():
         require("location share user guard" in content.lower(),
                 f"{path} must document the location share user guard",
                 failures)
+        require("new partner user guard" in content.lower(),
+                f"{path} must document the new partner user guard",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -279,6 +298,9 @@ def main():
             failures)
     require("location share user guard" in changes.lower(),
             "CHANGES must record location share user guard hardening",
+            failures)
+    require("new partner user guard" in changes.lower(),
+            "CHANGES must record new partner user guard hardening",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -297,6 +319,9 @@ def main():
             failures)
     require("status: completed" in make_gate_plan,
             "Make gate alias plan must be marked completed",
+            failures)
+    require("status: completed" in new_partner_plan,
+            "new partner user guard plan must be marked completed",
             failures)
 
     if failures:

@@ -40,6 +40,7 @@ Helpful reports include:
 - Message read-state updates should guard Digits session lookup and remote array parsing before posting changes.
 - Digits user ID normalization should reject blank session IDs before local message read-state storage changes.
 - The Digits login success guard should prevent failed authentication callbacks from storing identity or opening the partner flow.
+- The new partner user guard should require a normalized Digits user ID and nonblank partner number before posting partner requests.
 - The location share user guard should require a normalized Digits user ID before posting location coordinates.
 
 ## Mobile Privacy Notes
@@ -52,6 +53,8 @@ message state. Include whether Digits user ID normalization can be bypassed with
 blank or whitespace-only session IDs.
 Reports involving login should state whether the Digits login success guard can
 be bypassed after failed authentication.
+Reports involving partner requests should state whether the new partner user
+guard can be bypassed with missing Digits sessions or blank partner numbers.
 Reports involving location sharing should state whether the location share user
 guard can be bypassed with missing or blank Digits session IDs.
 

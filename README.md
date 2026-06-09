@@ -66,14 +66,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Digits user ID normalization trims session IDs and skips blank values before message read-state storage changes.
 - A Digits login success guard keeps failed authentication callbacks out of the partner flow and stores only normalized user IDs.
 - The location share user guard skips location POSTs when no normalized Digits user ID is available.
+- The new partner user guard skips partner requests when the partner number, normalized Digits user ID, or Digits session is unavailable.
 
 ## Testing and Verification
 
 - `make lint`, `make test`, `make build`, and `make check` run
   `scripts/check-baseline.py`, which verifies project wiring, credential
   placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
-  Digits login success guard, the location share user guard, and message
-  read-state guards.
+  Digits login success guard, the new partner user guard, the location share
+  user guard, and message read-state guards.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -86,6 +87,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Message read-state changes should preserve guarded Digits session lookup and array casts.
 - Digits user ID normalization should continue to reject blank session IDs before writing local read-state data.
 - The Digits login success guard should keep failed authentication callbacks from storing identity or opening the partner flow.
+- The new partner user guard should keep partner requests behind normalized Digits session identities and nonblank partner numbers.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 
 ## Security and Privacy Notes

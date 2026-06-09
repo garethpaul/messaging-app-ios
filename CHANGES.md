@@ -8,6 +8,8 @@
   Digits user ID.
 - Added a Digits login success guard so failed authentication callbacks do not
   open the partner flow or store identity.
+- Added a new partner user guard so partner POSTs require a normalized Digits
+  user ID and nonblank partner number.
 
 ## 2026-06-08
 

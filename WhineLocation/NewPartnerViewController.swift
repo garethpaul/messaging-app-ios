@@ -21,9 +21,11 @@ class NewPartnerViewController: UIViewController {
 
     @IBAction func findPartnerBtn(sender: AnyObject) {
 
-        let partner = self.partnerNumber.text
-        let digitsSession = Digits.sharedInstance().session()
-        let userId = digitsSession.userID
+        guard let partner = normalizedPartnerNumber(self.partnerNumber.text),
+            let userId = currentDigitsUserID(),
+            let digitsSession = Digits.sharedInstance().session() else {
+                return
+        }
         let userPhoneNumber = digitsSession.phoneNumber
 
         Alamofire.request(.POST, getInfo("newpartnerUrl"), parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber]).responseJSON { (req, res, json, error) in
@@ -34,8 +36,8 @@ class NewPartnerViewController: UIViewController {
                 self.performSegueWithIdentifier("waiting", sender: self)
             }
         }
-
     }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -52,3 +54,15 @@ class NewPartnerViewController: UIViewController {
 
 }
 
+func normalizedPartnerNumber(partnerNumber: String?) -> String? {
+    guard let partnerNumber = partnerNumber else {
+        return nil
+    }
+
+    let trimmedPartnerNumber = partnerNumber.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+    if trimmedPartnerNumber.characters.count == 0 {
+        return nil
+    }
+
+    return trimmedPartnerNumber
+}
