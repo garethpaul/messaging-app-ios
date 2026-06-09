@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-09
+
+- Added a Digits login success guard so failed authentication callbacks do not
+  open the partner flow or store identity.
+
 ## 2026-06-08
 
 - Replaced committed Fabric/Crashlytics build-script values with `FABRIC_API_KEY` and `CRASHLYTICS_BUILD_SECRET` environment placeholders.

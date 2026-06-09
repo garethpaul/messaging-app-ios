@@ -25,16 +25,17 @@ class LoginViewController: UIViewController {
         let digits = Digits.sharedInstance()
 
         digits.authenticateWithDigitsAppearance(digitsAppearence, viewController: nil, title: nil) { (session, error: NSError!) -> Void in
-            if session != nil {
+            if session != nil && error == nil {
+                guard let userID = normalizedDigitsUserID(session.userID) else {
+                    return
+                }
+
                 let user = User()
-                user.New(session.userID, phoneNumber: session.phoneNumber)
-                PFInstallation.currentInstallation().setObject(session.userID, forKey: "user")
+                user.New(userID, phoneNumber: session.phoneNumber)
+                PFInstallation.currentInstallation().setObject(userID, forKey: "user")
                 PFInstallation.currentInstallation().saveEventually({ (saved, error) -> Void in
                     
                 })
-                self.performSegueWithIdentifier("NewPartner", sender: self)
-            }
-            else {
                 self.performSegueWithIdentifier("NewPartner", sender: self)
             }
         }
@@ -48,4 +49,3 @@ class LoginViewController: UIViewController {
 
 
 }
-

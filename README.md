@@ -61,10 +61,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `WhineLocation/Info.plist` is tracked with placeholder-safe service keys and backend endpoint values; missing plist-backed values make `getInfo` return an empty value instead of force-unwrapping.
 - Message read-state caching is keyed by the active Digits user and skips updates when the session or remote array shape is unavailable.
 - Digits user ID normalization trims session IDs and skips blank values before message read-state storage changes.
+- A Digits login success guard keeps failed authentication callbacks out of the partner flow and stores only normalized user IDs.
 
 ## Testing and Verification
 
-- `make check` runs `scripts/check-baseline.py`, which verifies project wiring, credential placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, and message read-state guards.
+- `make check` runs `scripts/check-baseline.py`, which verifies project wiring, credential placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the Digits login success guard, and message read-state guards.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -76,6 +77,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Do not commit Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, message fixtures, phone identity data, or location data.
 - Message read-state changes should preserve guarded Digits session lookup and array casts.
 - Digits user ID normalization should continue to reject blank session IDs before writing local read-state data.
+- The Digits login success guard should keep failed authentication callbacks from storing identity or opening the partner flow.
 
 ## Security and Privacy Notes
 

@@ -79,12 +79,14 @@ def main():
         "docs/plans/2026-06-08-messaging-app-ios-baseline.md",
         "docs/plans/2026-06-08-message-read-state-guards.md",
         "docs/plans/2026-06-08-digits-user-id-normalization.md",
+        "docs/plans/2026-06-09-digits-login-success-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
         "WhineLocation/ServiceKeys.xcconfig.example",
         "WhineLocation/User.swift",
         "WhineLocation/Messages.swift",
+        "WhineLocation/LoginViewcontroller.swift",
         "WhineLocation/ShareLocation.swift",
         "WhineLocation/CoreLocationController.swift",
         "WhineLocation/HomeTimeViewController.swift",
@@ -128,6 +130,7 @@ def main():
     service_keys = read("WhineLocation/ServiceKeys.xcconfig.example")
     user = read("WhineLocation/User.swift")
     messages = read("WhineLocation/Messages.swift")
+    login = read("WhineLocation/LoginViewcontroller.swift")
     share_location = read("WhineLocation/ShareLocation.swift")
     home_time = read("WhineLocation/HomeTimeViewController.swift")
     core_location = read("WhineLocation/CoreLocationController.swift")
@@ -140,6 +143,7 @@ def main():
     read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
     user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
     user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
+    login_plan = read("docs/plans/2026-06-09-digits-login-success-guard.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -192,6 +196,14 @@ def main():
     require("session().userID" not in messages,
             "message read-state handling must not force a Digits session user ID",
             failures)
+    require("session != nil && error == nil" in login and
+            "guard let userID = normalizedDigitsUserID(session.userID)" in login and
+            "setObject(userID, forKey: \"user\")" in login,
+            "Digits login must require a successful session and normalized user ID before storing identity",
+            failures)
+    require("else {\n                self.performSegueWithIdentifier(\"NewPartner\"" not in login,
+            "Digits login must not segue into the partner flow after failed authentication",
+            failures)
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
             "location sharing must use POST",
             failures)
@@ -235,17 +247,26 @@ def main():
         require("digits user id normalization" in content.lower(),
                 f"{path} must document Digits user ID normalization",
                 failures)
+        require("digits login success guard" in content.lower(),
+                f"{path} must document the Digits login success guard",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
     require("digits user id normalization" in changes.lower(),
             "CHANGES must record Digits user ID normalization",
             failures)
+    require("digits login success guard" in changes.lower(),
+            "CHANGES must record Digits login success guard hardening",
+            failures)
     require("status: completed" in read_state_plan,
             "message read-state guard plan must be marked completed",
             failures)
     require("status: completed" in user_id_plan,
             "Digits user ID normalization plan must be marked completed",
+            failures)
+    require("status: completed" in login_plan,
+            "Digits login success guard plan must be marked completed",
             failures)
 
     if failures:

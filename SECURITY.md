@@ -39,6 +39,7 @@ Helpful reports include:
 - Plist-backed endpoint lookup through `getInfo` should fail closed instead of force-unwrapping missing local configuration.
 - Message read-state updates should guard Digits session lookup and remote array parsing before posting changes.
 - Digits user ID normalization should reject blank session IDs before local message read-state storage changes.
+- The Digits login success guard should prevent failed authentication callbacks from storing identity or opening the partner flow.
 
 ## Mobile Privacy Notes
 
@@ -48,6 +49,8 @@ For this app, reports involving pulse/message read-state behavior should state
 whether malformed remote data or missing Digits sessions can expose or corrupt
 message state. Include whether Digits user ID normalization can be bypassed with
 blank or whitespace-only session IDs.
+Reports involving login should state whether the Digits login success guard can
+be bypassed after failed authentication.
 
 ## Dependency and Supply Chain Security
 
