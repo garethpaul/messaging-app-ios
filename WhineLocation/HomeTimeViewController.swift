@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import DigitsKit
 import Alamofire
 
 class HomeTimeViewController: UIViewController {
@@ -41,14 +40,21 @@ class HomeTimeViewController: UIViewController {
     }
     
     @IBAction func sendTime(sender: AnyObject) {
-        let userId = Digits.sharedInstance().session().userID
-        var dateFormatter = NSDateFormatter()
+        guard let userId = currentDigitsUserID() else {
+            return
+        }
+
+        let dateFormatter = NSDateFormatter()
         dateFormatter.dateFormat = "hh:mm a" //format style. Browse online to get a format that fits your needs.
-        var dateString = dateFormatter.stringFromDate(uiPicker.date)
+        let dateString = dateFormatter.stringFromDate(uiPicker.date)
         
-        Alamofire.request(.POST, getInfo("newHometimeUrl"), parameters: ["userId": userId, "homeTime": dateString])
-        performSegueWithIdentifier("presentNav", sender: self)
-        
+        Alamofire.request(.POST, getInfo("newHometimeUrl"), parameters: ["userId": userId, "homeTime": dateString]).responseJSON { (req, res, json, error) in
+            guard error == nil else {
+                return
+            }
+
+            self.performSegueWithIdentifier("presentNav", sender: self)
+        }
     }
     
 

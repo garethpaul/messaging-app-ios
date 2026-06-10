@@ -73,6 +73,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   refresh cooldown so repeat taps do not post duplicate messages.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
+- The home time submission guard requires a normalized Digits user ID and only
+  opens the next screen after a successful Alamofire response.
 
 ## Testing and Verification
 
@@ -107,6 +109,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - The pulse list user guard should keep message list refreshes behind
   normalized Digits user IDs and guarded response JSON.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
+- The home time submission guard should keep home-time POSTs behind normalized
+  Digits session IDs and successful backend responses.
 
 ## Security and Privacy Notes
 

@@ -50,6 +50,8 @@ Helpful reports include:
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
+- The home time submission guard should require a normalized Digits user ID
+  before posting and should not present failed requests as successful updates.
 
 ## Mobile Privacy Notes
 

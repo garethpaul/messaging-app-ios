@@ -89,6 +89,7 @@ def main():
         "docs/plans/2026-06-09-pulse-send-throttle.md",
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
         "docs/plans/2026-06-10-hosted-project-validation.md",
+        "docs/plans/2026-06-10-home-time-submission-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -163,6 +164,7 @@ def main():
     pulse_send_throttle_plan = read("docs/plans/2026-06-09-pulse-send-throttle.md")
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
     hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
+    home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
     workflow = read(".github/workflows/check.yml")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
@@ -254,6 +256,17 @@ def main():
     require('Alamofire.request(.POST, getInfo("newHometimeUrl")' in home_time,
             "hometime updates must use POST",
             failures)
+    send_time_method = home_time.split("@IBAction func sendTime", 1)[1].split("override func prepareForSegue", 1)[0]
+    require("guard let userId = currentDigitsUserID() else" in send_time_method and
+            "session().userID" not in send_time_method,
+            "home-time updates must require a normalized Digits user ID before posting",
+            failures)
+    response_index = send_time_method.find(".responseJSON")
+    success_guard_index = send_time_method.find("guard error == nil else")
+    segue_index = send_time_method.find('self.performSegueWithIdentifier("presentNav", sender: self)')
+    require(0 <= response_index < success_guard_index < segue_index,
+            "home-time navigation must occur only after a successful POST callback",
+            failures)
     require('Alamofire.request(.POST, getInfo("beaconUrl")' in core_location,
             "beacon updates must use POST",
             failures)
@@ -339,6 +352,9 @@ def main():
         require("pulse list user guard" in content.lower(),
                 f"{path} must document pulse list user guard",
                 failures)
+        require("home time submission guard" in content.lower(),
+                f"{path} must document home time submission guard",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -362,6 +378,9 @@ def main():
             failures)
     require("pulse list user guard" in changes.lower(),
             "CHANGES must record pulse list user guard",
+            failures)
+    require("home time submission guard" in changes.lower(),
+            "CHANGES must record home time submission guard",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -395,6 +414,10 @@ def main():
             failures)
     require("status: completed" in hosted_validation_plan and "make check" in hosted_validation_plan,
             "hosted project validation plan must be marked completed",
+            failures)
+    require("status: completed" in home_time_plan and "currentDigitsUserID" in home_time_plan and
+            "successful Alamofire response" in home_time_plan,
+            "home time submission guard plan must be completed and document both guards",
             failures)
     require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
             "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
