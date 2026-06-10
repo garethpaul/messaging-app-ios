@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Added pinned, read-only macOS hosted validation for `make check` and
+  `WhineLocation.xcodeproj` parsing without credentials or runtime service calls.
 - Added a pulse list user guard so message refreshes require a normalized
   Digits user ID and guarded response JSON before parsing.
 

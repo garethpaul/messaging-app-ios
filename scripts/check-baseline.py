@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import plistlib
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -69,6 +70,7 @@ def main():
     failures = []
     required_files = [
         ".gitignore",
+        ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -86,6 +88,7 @@ def main():
         "docs/plans/2026-06-09-new-partner-user-guard.md",
         "docs/plans/2026-06-09-pulse-send-throttle.md",
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
+        "docs/plans/2026-06-10-hosted-project-validation.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -159,6 +162,8 @@ def main():
     new_partner_plan = read("docs/plans/2026-06-09-new-partner-user-guard.md")
     pulse_send_throttle_plan = read("docs/plans/2026-06-09-pulse-send-throttle.md")
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
+    hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
+    workflow = read(".github/workflows/check.yml")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -388,6 +393,28 @@ def main():
     require("status: completed" in pulse_list_plan,
             "pulse list user guard plan must be marked completed",
             failures)
+    require("status: completed" in hosted_validation_plan and "make check" in hosted_validation_plan,
+            "hosted project validation plan must be marked completed",
+            failures)
+    require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
+            "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
+            "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" in workflow and
+            "run: make check" in workflow,
+            "Check workflow must stay pinned, read-only, and bounded",
+            failures)
+
+    if shutil.which("xcodebuild"):
+        result = subprocess.run(
+            ["xcodebuild", "-list", "-project", "WhineLocation.xcodeproj"],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        require(result.returncode == 0,
+                "xcodebuild could not parse WhineLocation.xcodeproj: " + result.stderr.strip(), failures)
+    else:
+        print("xcodebuild unavailable; static iOS baseline only.")
 
     if failures:
         for failure in failures:

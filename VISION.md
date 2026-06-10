@@ -36,6 +36,8 @@ Priority:
 - Keep the pulse list user guard before refreshing message list state
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
+- Keep hosted project validation pinned and read-only on macOS through
+  `WhineLocation.xcodeproj` parsing and `make check`
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
 
