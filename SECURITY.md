@@ -44,6 +44,8 @@ Helpful reports include:
 - Partner prefix preservation should not erase a partially entered partner number when the partner field is focused again.
 - The location share user guard should require a normalized Digits user ID before posting location coordinates.
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
+- The pulse list user guard should require a normalized Digits user ID and
+  guarded response JSON before refreshing message list state.
 
 ## Mobile Privacy Notes
 
@@ -63,6 +65,8 @@ Reports involving location sharing should state whether the location share user
 guard can be bypassed with missing or blank Digits session IDs.
 Reports involving pulse sends should state whether the pulse send throttle can
 be bypassed with rapid taps while a message refresh is pending.
+Reports involving pulse list refreshes should state whether the pulse list user
+guard can be bypassed with missing Digits sessions or malformed response JSON.
 
 ## Dependency and Supply Chain Security
 

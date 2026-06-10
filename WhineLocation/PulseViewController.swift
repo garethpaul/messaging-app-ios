@@ -40,17 +40,28 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
     var sendAvailable = true
 
     func getData() {
+        guard let userId = currentDigitsUserID() else {
+            endRefreshingIfNeeded()
+            return
+        }
 
         // clear data
         dataDate.removeAll(keepCapacity: false)
         dataInfo.removeAll(keepCapacity: false)
         dataType.removeAll(keepCapacity: false)
+        dataId.removeAll(keepCapacity: false)
+        dataRead.removeAll(keepCapacity: false)
         
-        Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": Digits.sharedInstance().session().userID]).responseJSON { (req, res, json, error) in
+        Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId]).responseJSON { (req, res, json, error) in
             if (error != nil) {
-                self.refreshControl.endRefreshing()
+                self.endRefreshingIfNeeded()
             } else {
-                var json = JSON(json!)
+                guard let jsonValue = json else {
+                    self.endRefreshingIfNeeded()
+                    return
+                }
+
+                var json = JSON(jsonValue)
 
                 for (index: String, subJson: JSON) in json {
                     //Do something you want
@@ -81,12 +92,16 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
                     
                     compareRead(self.dataId)
                 })
-                self.refreshControl.endRefreshing()
+                self.endRefreshingIfNeeded()
 
             }
         }
         
         
+    }
+
+    func endRefreshingIfNeeded() {
+        refreshControl?.endRefreshing()
     }
 
 

@@ -85,6 +85,7 @@ def main():
         "docs/plans/2026-06-09-partner-prefix-preservation.md",
         "docs/plans/2026-06-09-new-partner-user-guard.md",
         "docs/plans/2026-06-09-pulse-send-throttle.md",
+        "docs/plans/2026-06-10-pulse-list-user-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -157,6 +158,7 @@ def main():
     partner_prefix_plan = read("docs/plans/2026-06-09-partner-prefix-preservation.md")
     new_partner_plan = read("docs/plans/2026-06-09-new-partner-user-guard.md")
     pulse_send_throttle_plan = read("docs/plans/2026-06-09-pulse-send-throttle.md")
+    pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -262,6 +264,23 @@ def main():
     ]:
         require("println(" not in source, f"{path} must not log message, phone, or network data", failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
+    get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
+    require("guard let userId = currentDigitsUserID() else" in get_data_method and
+            'parameters: ["userId": userId]' in get_data_method and
+            "session().userID" not in get_data_method,
+            "Pulse list refresh must require a normalized Digits user ID before loading messages",
+            failures)
+    require("guard let jsonValue = json else" in get_data_method and
+            "var json = JSON(jsonValue)" in get_data_method and
+            "JSON(json!)" not in get_data_method,
+            "Pulse list refresh must guard missing JSON before parsing messages",
+            failures)
+    require("dataId.removeAll" in get_data_method and
+            "dataRead.removeAll" in get_data_method and
+            "func endRefreshingIfNeeded()" in pulse and
+            "refreshControl?.endRefreshing()" in pulse,
+            "Pulse list refresh must clear read-state arrays and end refreshes safely",
+            failures)
     require("if sendAvailable {" in send_msg_method and
             "sendAvailable = false" in send_msg_method and
             "self.sendAvailable = true" in send_msg_method and
@@ -312,6 +331,9 @@ def main():
         require("pulse send throttle" in content.lower(),
                 f"{path} must document pulse send throttle",
                 failures)
+        require("pulse list user guard" in content.lower(),
+                f"{path} must document pulse list user guard",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -332,6 +354,9 @@ def main():
             failures)
     require("pulse send throttle" in changes.lower(),
             "CHANGES must record pulse send throttle",
+            failures)
+    require("pulse list user guard" in changes.lower(),
+            "CHANGES must record pulse list user guard",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -359,6 +384,9 @@ def main():
             failures)
     require("status: completed" in pulse_send_throttle_plan,
             "pulse send throttle plan must be marked completed",
+            failures)
+    require("status: completed" in pulse_list_plan,
+            "pulse list user guard plan must be marked completed",
             failures)
 
     if failures:

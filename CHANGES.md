@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-10
+
+- Added a pulse list user guard so message refreshes require a normalized
+  Digits user ID and guarded response JSON before parsing.
+
 ## 2026-06-09
 
 - Added `make lint`, `make test`, and `make build` aliases so local gate
