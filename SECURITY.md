@@ -33,10 +33,10 @@ Helpful reports include:
 - Review found database, model, query, or persistence-related code; changes in those areas should receive security-focused review before merge.
 - Dependency manifests detected: Podfile, Podfile.lock. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
 - Run `make lint`, `make test`, `make build`, and `make check` after changing Xcode project metadata, `Info.plist` handling, Fabric/Crashlytics setup, backend URLs, Swift sources, Podfile metadata, or security docs.
-- The pinned macOS workflow only parses project metadata and static resources;
-  it does not install pods, receive service credentials, authenticate users,
-  contact backends, share location, process messages, build or sign the app, or
-  launch a simulator.
+- The pinned macOS workflow uses a read-only, credential-free checkout and only
+  parses project metadata and static resources; it does not install pods,
+  receive service credentials, authenticate users, contact backends, share
+  location, process messages, build or sign the app, or launch a simulator.
 - `WhineLocation/Info.plist` should stay tracked with placeholder-safe metadata and privacy usage descriptions.
 - Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, phone identity data, messages, and location data should stay out of git.
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
