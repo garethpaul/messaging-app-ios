@@ -84,11 +84,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Digits login success guard, the new partner user guard, the location share
   user guard, the pulse send throttle, the pulse list user guard, and message
   read-state guards.
-- Pinned `macos-15` GitHub Actions runs `make check` and parses
-  `WhineLocation.xcodeproj` with `xcodebuild -list`. This hosted validation does
-  not install pods, receive service credentials, authenticate users, contact
-  backends, share location, process messages, build or sign the app, or launch
-  a simulator.
+- Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout,
+  runs `make check`, and parses `WhineLocation.xcodeproj` with
+  `xcodebuild -list`. This hosted validation does not install pods, receive
+  service credentials, authenticate users, contact backends, share location,
+  process messages, build or sign the app, or launch a simulator.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.

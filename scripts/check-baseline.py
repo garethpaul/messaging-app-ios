@@ -99,6 +99,7 @@ def main():
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
         "docs/plans/2026-06-10-hosted-project-validation.md",
         "docs/plans/2026-06-10-home-time-submission-guard.md",
+        "docs/plans/2026-06-12-checkout-credential-boundary.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -174,7 +175,12 @@ def main():
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
     hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
     home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
+    checkout_plan = read("docs/plans/2026-06-12-checkout-credential-boundary.md")
     workflow = read(".github/workflows/check.yml")
+    workflow_files = [
+        *sorted((ROOT / ".github/workflows").glob("*.yml")),
+        *sorted((ROOT / ".github/workflows").glob("*.yaml")),
+    ]
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -427,6 +433,11 @@ def main():
     home_time_status = re.findall(r"(?mi)^status:\s*(.+?)\s*$", home_time_plan)
     home_time_work = markdown_section(home_time_plan, "Work Completed")
     home_time_verification = markdown_section(home_time_plan, "Verification Completed")
+    checkout_status = re.findall(r"(?mi)^status:\s*(.+?)\s*$", checkout_plan)
+    checkout_work = markdown_section(checkout_plan, "Work Completed")
+    checkout_verification = markdown_section(
+        checkout_plan, "Verification Completed"
+    )
     require(home_time_status == ["completed"],
             "home time submission guard plan must record exactly one completed status",
             failures)
@@ -459,6 +470,36 @@ def main():
             "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" in workflow and
             "run: make check" in workflow,
             "Check workflow must stay pinned, read-only, and bounded",
+            failures)
+    checkout_action = (
+        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10"
+    )
+    checkout_blocks = re.findall(
+        rf"(?m)^(?P<indent> *)- +uses: +{re.escape(checkout_action)}[^\n]*\n"
+        rf"(?P=indent)  with:\n"
+        rf"(?P=indent)    persist-credentials: +false *$",
+        workflow,
+    )
+    checkout_actions = re.findall(
+        r"(?m)^\s*-\s+uses:\s+actions/checkout@",
+        workflow,
+    )
+    require(len(workflow_files) == 1 and
+            workflow.count("permissions:") == 1 and
+            workflow.count("contents: read") == 1 and
+            not re.search(r"(?m)^\s*[A-Za-z-]+:\s*write\s*$", workflow) and
+            len(checkout_actions) == 1 and
+            workflow.count(checkout_action) == 1 and
+            len(checkout_blocks) == 1 and
+            workflow.count("persist-credentials: false") == 1 and
+            "persist-credentials: true" not in workflow,
+            "Check workflow must keep one read-only permission block and one "
+            "pinned, credential-free checkout",
+            failures)
+    require(checkout_status == ["completed"] and checkout_work and
+            "make check" in checkout_verification,
+            "checkout credential plan must record one completed status, "
+            "completed work, and make check verification",
             failures)
 
     if shutil.which("xcodebuild"):
