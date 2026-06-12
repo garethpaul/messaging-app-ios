@@ -75,6 +75,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   user ID and guards missing JSON before parsing messages.
 - The home time submission guard requires a normalized Digits user ID and only
   opens the next screen after a successful Alamofire response.
+- The waiting refresh response guard requires a normalized Digits session,
+  parses only successful JSON callbacks, and restores progress UI on every
+  callback outcome.
 
 ## Testing and Verification
 
@@ -82,8 +85,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `scripts/check-baseline.py`, which verifies project wiring, credential
   placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
   Digits login success guard, the new partner user guard, the location share
-  user guard, the pulse send throttle, the pulse list user guard, and message
-  read-state guards.
+  user guard, the pulse send throttle, the pulse list user guard, the waiting
+  refresh response guard, and message read-state guards.
 - Pinned `macos-15` GitHub Actions runs `make check` and parses
   `WhineLocation.xcodeproj` with `xcodebuild -list`. This hosted validation does
   not install pods, receive service credentials, authenticate users, contact

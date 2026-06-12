@@ -52,6 +52,8 @@ Helpful reports include:
   guarded response JSON before refreshing message list state.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
+- The waiting refresh response guard should require a normalized Digits
+  session and reject failed or missing JSON callbacks before match parsing.
 
 ## Mobile Privacy Notes
 

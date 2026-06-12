@@ -20,7 +20,7 @@ class WaitingViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    func check(){
+    func check() {
         //
         self.spinner.hidden = false
         self.waitingText.hidden = true
@@ -28,22 +28,30 @@ class WaitingViewController: UIViewController {
         let delayTime = dispatch_time(DISPATCH_TIME_NOW,
             Int64(2 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
+            guard let session = Digits.sharedInstance().session(),
+                let userId = normalizedDigitsUserID(session.userID) else {
+                    self.spinner.hidden = true
+                    self.waitingText.hidden = false
+                    return
+            }
 
-            let userId = Digits.sharedInstance().session().userID
-            let userPhoneNumber = Digits.sharedInstance().session().phoneNumber
+            let userPhoneNumber = session.phoneNumber
             Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": userPhoneNumber]).responseJSON { (req, res, json, error) in
-                if (error == nil) {
-                    var json = JSON(json!)
-                    if let match = json["match"].string {
-                        if match == "True" {
-                            // there is now a match
-                            self.performSegueWithIdentifier("NavigationViewController", sender: self)
-                        }
-                    }
+                defer {
+                    self.spinner.hidden = true
+                    self.waitingText.hidden = false
+                }
+
+                guard error == nil, let jsonValue = json else {
+                    return
+                }
+
+                let responseJSON = JSON(jsonValue)
+                if responseJSON["match"].string == "True" {
+                    // there is now a match
+                    self.performSegueWithIdentifier("NavigationViewController", sender: self)
                 }
             }
-            self.spinner.hidden = true
-            self.waitingText.hidden = false
         }
     }
 

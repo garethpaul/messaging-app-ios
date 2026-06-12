@@ -1,6 +1,6 @@
 # Waiting Refresh Response Guard
 
-status: planned
+status: completed
 
 ## Context
 
@@ -43,14 +43,19 @@ and synchronized maintenance documentation.
 
 ## Verification
 
+Completed locally on 2026-06-12:
+
 - `python3 -m py_compile scripts/check-baseline.py`
 - `make lint`
 - `make test`
 - `make build`
 - `make check`
-- hostile mutations removing the identity, JSON, or callback cleanup guard
+- hostile mutations removing the identity, JSON, and callback cleanup guards
+  were each rejected by their specific static contract
 - `git diff --check`
-- hosted push and pull-request checks
+
+`xcodebuild` is unavailable on this Linux host, so local verification is static.
+Hosted push and pull-request checks will be recorded after the branch is pushed.
 
 ## Boundaries
 

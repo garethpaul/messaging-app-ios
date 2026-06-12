@@ -36,6 +36,8 @@ Priority:
 - Keep the pulse list user guard before refreshing message list state
 - Keep the home time submission guard behind normalized identity and successful
   backend responses
+- Keep the waiting refresh response guard behind normalized identity and
+  successful, present JSON callbacks
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
 - Keep hosted project validation pinned and read-only on macOS through
@@ -86,6 +88,8 @@ The pulse list user guard should keep message list refreshes tied to normalized
 Digits session identities and guarded response JSON.
 The home time submission guard should keep home-time updates tied to normalized
 Digits identities and only navigate after successful Alamofire responses.
+The waiting refresh response guard should keep partner-match polling tied to a
+normalized Digits session and restore progress UI for every callback outcome.
 
 ## What We Will Not Merge (For Now)
 
