@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,14 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 def read(relative_path):
     return (ROOT / relative_path).read_text(encoding="utf-8", errors="replace")
+
+
+def markdown_section(text, heading):
+    match = re.search(
+        rf"(?ms)^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)",
+        text,
+    )
+    return match.group(1).strip() if match else ""
 
 
 def require(condition, message, failures):
@@ -415,10 +424,36 @@ def main():
     require("status: completed" in hosted_validation_plan and "make check" in hosted_validation_plan,
             "hosted project validation plan must be marked completed",
             failures)
-    require("status: completed" in home_time_plan and "currentDigitsUserID" in home_time_plan and
-            "successful Alamofire response" in home_time_plan,
-            "home time submission guard plan must be completed and document both guards",
+    home_time_status = re.findall(r"(?mi)^status:\s*(.+?)\s*$", home_time_plan)
+    home_time_work = markdown_section(home_time_plan, "Work Completed")
+    home_time_verification = markdown_section(home_time_plan, "Verification Completed")
+    require(home_time_status == ["completed"],
+            "home time submission guard plan must record exactly one completed status",
             failures)
+    require(bool(home_time_work),
+            "home time submission guard plan must record completed work",
+            failures)
+    require(bool(home_time_verification) and not re.search(
+                r"(?i)\b(pending|todo|tbd|not run)\b", home_time_verification),
+            "home time submission guard plan must record completed verification",
+            failures)
+    for evidence in [
+        "make check",
+        "make lint",
+        "make test",
+        "make build",
+        "python3 -m py_compile scripts/check-baseline.py",
+        "git diff --check",
+        "27287606534",
+        "27402324851",
+        "854a1c6566e359a602b1582cdd106a1cfb5b4242",
+        "guard let userId = currentDigitsUserID() else",
+        "guard error == nil else",
+        'performSegueWithIdentifier("presentNav", sender: self)',
+    ]:
+        require(evidence in home_time_verification,
+                f"home time submission guard verification must record {evidence}",
+                failures)
     require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
             "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
             "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" in workflow and

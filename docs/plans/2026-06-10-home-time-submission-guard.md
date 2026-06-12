@@ -16,15 +16,6 @@ and a failed request is presented as though the update succeeded.
 - Add static and mutation guardrails for identity and response handling.
 - Document the behavior without adding credentials or live service tests.
 
-## Verification
-
-- `make lint`
-- `make test`
-- `make build`
-- `make check`
-- mutation checks for the user and response-success guards
-- `git diff --check`
-
 ## Work Completed
 
 - Replaced direct Digits session dereferencing with `currentDigitsUserID()`.
@@ -34,3 +25,22 @@ and a failed request is presented as though the update succeeded.
 - Added mutation-sensitive baseline checks for normalized identity and callback
   ordering.
 - Documented the guarded submission behavior across project guidance.
+
+## Verification Completed
+
+- `make check`
+- `make lint`
+- `make test`
+- `make build`
+- `python3 -m py_compile scripts/check-baseline.py`
+- `git diff --check`
+- Historical `push` Check run `27287606534` completed successfully for exact
+  main SHA `854a1c6566e359a602b1582cdd106a1cfb5b4242`.
+- Historical CodeQL Setup run `27402324851` completed successfully for exact
+  main SHA `854a1c6566e359a602b1582cdd106a1cfb5b4242`.
+- Mutation checks confirmed the plan checker rejects an incomplete status,
+  unfinished verification, altered run evidence, and either missing guard.
+- The implementation requires `guard let userId = currentDigitsUserID() else`
+  before submission.
+- The response callback requires `guard error == nil else` before calling
+  `performSegueWithIdentifier("presentNav", sender: self)`.
