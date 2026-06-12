@@ -18,6 +18,8 @@ Current baseline: `make lint`, `make test`, `make build`, and `make check` run
 Digits/Fabric/Twitter framework wiring, Fabric/Crashlytics placeholder build
 settings, `ServiceKeys.xcconfig.example`, placeholder-safe plist metadata,
 `getInfo` fallback behavior, and message read-state guardrails.
+GitHub Actions runs the same static baseline with Python 3.12 for pushes and
+pull requests.
 
 The current focus is:
 
@@ -38,6 +40,8 @@ Priority:
 - Keep local lint, test, build, and check gates on the same static baseline
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
+- Keep Fabric, TwitterKit, Digits, and Crashlytics documented as legacy SDKs
+  until a dedicated migration replaces them
 
 Next priorities:
 

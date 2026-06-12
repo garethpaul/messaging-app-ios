@@ -69,6 +69,7 @@ def main():
     failures = []
     required_files = [
         ".gitignore",
+        ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -86,6 +87,7 @@ def main():
         "docs/plans/2026-06-09-new-partner-user-guard.md",
         "docs/plans/2026-06-09-pulse-send-throttle.md",
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
+        "docs/plans/2026-06-10-ci-baseline.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -144,11 +146,13 @@ def main():
     core_location = read("WhineLocation/CoreLocationController.swift")
     waiting = read("WhineLocation/WaitingViewController.swift")
     pulse = read("WhineLocation/PulseViewController.swift")
+    swifty_json = read("WhineLocation/SwiftyJSON.swift")
     readme = read("README.md")
     vision = read("VISION.md")
     security = read("SECURITY.md")
     changes = read("CHANGES.md")
     makefile = read("Makefile")
+    ci_workflow = read(".github/workflows/check.yml")
     read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
     user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
     user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
@@ -159,6 +163,7 @@ def main():
     new_partner_plan = read("docs/plans/2026-06-09-new-partner-user-guard.md")
     pulse_send_throttle_plan = read("docs/plans/2026-06-09-pulse-send-throttle.md")
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
+    ci_plan = read("docs/plans/2026-06-10-ci-baseline.md")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -171,6 +176,10 @@ def main():
             failures)
     require("INFOPLIST_FILE = WhineLocation/Info.plist;" in project,
             "Xcode project must preserve app Info.plist wiring",
+            failures)
+    require("http://tools.ietf.org" not in swifty_json and
+            "https://datatracker.ietf.org/doc/html/rfc7231#section-4.3" in swifty_json,
+            "SwiftyJSON reference links must use HTTPS documentation URLs",
             failures)
 
     for key in ["FABRIC_API_KEY", "CRASHLYTICS_BUILD_SECRET", "TWITTER_CONSUMER_KEY", "TWITTER_CONSUMER_SECRET"]:
@@ -297,6 +306,11 @@ def main():
     require(".PHONY: build check lint test" in makefile and "lint test build: check" in makefile,
             "Makefile must expose lint, test, build, and check gate targets",
             failures)
+    require("actions/setup-python@v5" in ci_workflow and
+            'python-version: "3.12"' in ci_workflow and
+            "make check" in ci_workflow,
+            "GitHub Actions workflow must install Python 3.12 and run make check",
+            failures)
 
     tracked = tracked_files()
     generated = [path for path in tracked if "xcuserdata" in path or path.endswith(".xcuserstate")]
@@ -334,6 +348,12 @@ def main():
         require("pulse list user guard" in content.lower(),
                 f"{path} must document pulse list user guard",
                 failures)
+        require("github actions" in content.lower(),
+                f"{path} must document hosted static verification",
+                failures)
+        require("legacy sdk" in content.lower() or "legacy sdks" in content.lower(),
+                f"{path} must document the legacy SDK posture",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -357,6 +377,12 @@ def main():
             failures)
     require("pulse list user guard" in changes.lower(),
             "CHANGES must record pulse list user guard",
+            failures)
+    require("GitHub Actions" in changes,
+            "CHANGES must record hosted static baseline coverage",
+            failures)
+    require("SwiftyJSON RFC link" in changes,
+            "CHANGES must record the HTTPS documentation link cleanup",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -387,6 +413,9 @@ def main():
             failures)
     require("status: completed" in pulse_list_plan,
             "pulse list user guard plan must be marked completed",
+            failures)
+    require("status: completed" in ci_plan and "make check" in ci_plan,
+            "CI baseline plan must be marked completed with make check verification",
             failures)
 
     if failures:
