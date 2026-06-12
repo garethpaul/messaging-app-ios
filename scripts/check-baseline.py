@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import plistlib
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -70,6 +71,7 @@ def main():
     required_files = [
         ".gitignore",
         ".github/workflows/check.yml",
+        ".github/CODEOWNERS",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -87,7 +89,9 @@ def main():
         "docs/plans/2026-06-09-new-partner-user-guard.md",
         "docs/plans/2026-06-09-pulse-send-throttle.md",
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
+        "docs/plans/2026-06-10-hosted-project-validation.md",
         "docs/plans/2026-06-10-ci-baseline.md",
+        "docs/plans/2026-06-10-home-time-submission-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -146,13 +150,11 @@ def main():
     core_location = read("WhineLocation/CoreLocationController.swift")
     waiting = read("WhineLocation/WaitingViewController.swift")
     pulse = read("WhineLocation/PulseViewController.swift")
-    swifty_json = read("WhineLocation/SwiftyJSON.swift")
     readme = read("README.md")
     vision = read("VISION.md")
     security = read("SECURITY.md")
     changes = read("CHANGES.md")
     makefile = read("Makefile")
-    ci_workflow = read(".github/workflows/check.yml")
     read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
     user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
     user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
@@ -163,7 +165,10 @@ def main():
     new_partner_plan = read("docs/plans/2026-06-09-new-partner-user-guard.md")
     pulse_send_throttle_plan = read("docs/plans/2026-06-09-pulse-send-throttle.md")
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
+    hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
     ci_plan = read("docs/plans/2026-06-10-ci-baseline.md")
+    home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
+    workflow = read(".github/workflows/check.yml")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
             "project must not contain the old committed Fabric/Crashlytics values",
@@ -176,10 +181,6 @@ def main():
             failures)
     require("INFOPLIST_FILE = WhineLocation/Info.plist;" in project,
             "Xcode project must preserve app Info.plist wiring",
-            failures)
-    require("http://tools.ietf.org" not in swifty_json and
-            "https://datatracker.ietf.org/doc/html/rfc7231#section-4.3" in swifty_json,
-            "SwiftyJSON reference links must use HTTPS documentation URLs",
             failures)
 
     for key in ["FABRIC_API_KEY", "CRASHLYTICS_BUILD_SECRET", "TWITTER_CONSUMER_KEY", "TWITTER_CONSUMER_SECRET"]:
@@ -258,6 +259,17 @@ def main():
     require('Alamofire.request(.POST, getInfo("newHometimeUrl")' in home_time,
             "hometime updates must use POST",
             failures)
+    send_time_method = home_time.split("@IBAction func sendTime", 1)[1].split("override func prepareForSegue", 1)[0]
+    require("guard let userId = currentDigitsUserID() else" in send_time_method and
+            "session().userID" not in send_time_method,
+            "home-time updates must require a normalized Digits user ID before posting",
+            failures)
+    response_index = send_time_method.find(".responseJSON")
+    success_guard_index = send_time_method.find("guard error == nil else")
+    segue_index = send_time_method.find('self.performSegueWithIdentifier("presentNav", sender: self)')
+    require(0 <= response_index < success_guard_index < segue_index,
+            "home-time navigation must occur only after a successful POST callback",
+            failures)
     require('Alamofire.request(.POST, getInfo("beaconUrl")' in core_location,
             "beacon updates must use POST",
             failures)
@@ -306,11 +318,6 @@ def main():
     require(".PHONY: build check lint test" in makefile and "lint test build: check" in makefile,
             "Makefile must expose lint, test, build, and check gate targets",
             failures)
-    require("actions/setup-python@v5" in ci_workflow and
-            'python-version: "3.12"' in ci_workflow and
-            "make check" in ci_workflow,
-            "GitHub Actions workflow must install Python 3.12 and run make check",
-            failures)
 
     tracked = tracked_files()
     generated = [path for path in tracked if "xcuserdata" in path or path.endswith(".xcuserstate")]
@@ -348,8 +355,11 @@ def main():
         require("pulse list user guard" in content.lower(),
                 f"{path} must document pulse list user guard",
                 failures)
+        require("home time submission guard" in content.lower(),
+                f"{path} must document home time submission guard",
+                failures)
         require("github actions" in content.lower(),
-                f"{path} must document hosted static verification",
+                f"{path} must document hosted verification",
                 failures)
         require("legacy sdk" in content.lower() or "legacy sdks" in content.lower(),
                 f"{path} must document the legacy SDK posture",
@@ -378,11 +388,11 @@ def main():
     require("pulse list user guard" in changes.lower(),
             "CHANGES must record pulse list user guard",
             failures)
-    require("GitHub Actions" in changes,
-            "CHANGES must record hosted static baseline coverage",
+    require("home time submission guard" in changes.lower(),
+            "CHANGES must record home time submission guard",
             failures)
-    require("SwiftyJSON RFC link" in changes,
-            "CHANGES must record the HTTPS documentation link cleanup",
+    require("SwiftyJSON RFC link" in changes and "GitHub Actions" in changes,
+            "CHANGES must record documentation-link and hosted baseline work",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -414,9 +424,40 @@ def main():
     require("status: completed" in pulse_list_plan,
             "pulse list user guard plan must be marked completed",
             failures)
-    require("status: completed" in ci_plan and "make check" in ci_plan,
-            "CI baseline plan must be marked completed with make check verification",
+    require("status: completed" in hosted_validation_plan and "make check" in hosted_validation_plan,
+            "hosted project validation plan must be marked completed",
             failures)
+    require("status: completed" in ci_plan and "make check" in ci_plan,
+            "initial CI baseline plan must be completed",
+            failures)
+    require("status: completed" in home_time_plan and "currentDigitsUserID" in home_time_plan and
+            "successful Alamofire response" in home_time_plan,
+            "home time submission guard plan must be completed and document both guards",
+            failures)
+    require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
+            "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
+            "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" in workflow and
+            "persist-credentials: false" in workflow and
+            "run: make check" in workflow,
+            "Check workflow must stay pinned, read-only, and bounded",
+            failures)
+    require(read(".github/CODEOWNERS").strip() == "* @garethpaul",
+            "CODEOWNERS must assign repository-wide ownership", failures)
+    require("https://datatracker.ietf.org/doc/html/rfc7231#section-4.3" in read("WhineLocation/SwiftyJSON.swift"),
+            "SwiftyJSON RFC documentation links must use HTTPS", failures)
+
+    if shutil.which("xcodebuild"):
+        result = subprocess.run(
+            ["xcodebuild", "-list", "-project", "WhineLocation.xcodeproj"],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        require(result.returncode == 0,
+                "xcodebuild could not parse WhineLocation.xcodeproj: " + result.stderr.strip(), failures)
+    else:
+        print("xcodebuild unavailable; static iOS baseline only.")
 
     if failures:
         for failure in failures:

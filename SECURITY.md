@@ -33,10 +33,12 @@ Helpful reports include:
 - Review found database, model, query, or persistence-related code; changes in those areas should receive security-focused review before merge.
 - Dependency manifests detected: Podfile, Podfile.lock. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
 - Run `make lint`, `make test`, `make build`, and `make check` after changing Xcode project metadata, `Info.plist` handling, Fabric/Crashlytics setup, backend URLs, Swift sources, Podfile metadata, or security docs.
-- GitHub Actions runs the static `make check` baseline with Python 3.12 for
-  pushes and pull requests.
 - Fabric, TwitterKit, Digits, and Crashlytics are legacy SDKs in this preserved
   prototype; treat SDK migration or replacement as security-sensitive work.
+- The pinned macOS GitHub Actions workflow only parses project metadata and static resources;
+  it does not install pods, receive service credentials, authenticate users,
+  contact backends, share location, process messages, build or sign the app, or
+  launch a simulator.
 - `WhineLocation/Info.plist` should stay tracked with placeholder-safe metadata and privacy usage descriptions.
 - Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, phone identity data, messages, and location data should stay out of git.
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
@@ -50,6 +52,8 @@ Helpful reports include:
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
+- The home time submission guard should require a normalized Digits user ID
+  before posting and should not present failed requests as successful updates.
 
 ## Mobile Privacy Notes
 

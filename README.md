@@ -73,6 +73,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   refresh cooldown so repeat taps do not post duplicate messages.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
+- The home time submission guard requires a normalized Digits user ID and only
+  opens the next screen after a successful Alamofire response.
 
 ## Testing and Verification
 
@@ -82,8 +84,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Digits login success guard, the new partner user guard, the location share
   user guard, the pulse send throttle, the pulse list user guard, and message
   read-state guards.
-- GitHub Actions runs the same static `make check` baseline with Python 3.12
-  for pushes and pull requests.
+- Pinned `macos-15` GitHub Actions runs `make check` and parses
+  `WhineLocation.xcodeproj` with `xcodebuild -list`. This hosted validation does
+  not install pods, receive service credentials, authenticate users, contact
+  backends, share location, process messages, build or sign the app, or launch
+  a simulator.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -107,6 +112,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - The pulse list user guard should keep message list refreshes behind
   normalized Digits user IDs and guarded response JSON.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
+- The home time submission guard should keep home-time POSTs behind normalized
+  Digits session IDs and successful backend responses.
 
 ## Security and Privacy Notes
 
