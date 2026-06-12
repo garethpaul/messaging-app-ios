@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Added a waiting refresh response guard so polling requires a normalized
+  Digits session, guards callback JSON, and restores progress UI after responses.
 - Added a home time submission guard so updates require a normalized Digits
   user ID and navigate only after a successful POST response.
 - Added pinned, read-only macOS hosted validation for `make check` and

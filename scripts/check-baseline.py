@@ -90,6 +90,7 @@ def main():
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
         "docs/plans/2026-06-10-hosted-project-validation.md",
         "docs/plans/2026-06-10-home-time-submission-guard.md",
+        "docs/plans/2026-06-12-waiting-refresh-response-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -165,6 +166,7 @@ def main():
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
     hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
     home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
+    waiting_refresh_plan = read("docs/plans/2026-06-12-waiting-refresh-response-guard.md")
     workflow = read(".github/workflows/check.yml")
 
     require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
@@ -281,6 +283,23 @@ def main():
         ("WhineLocation/PulseViewController.swift", pulse),
     ]:
         require("println(" not in source, f"{path} must not log message, phone, or network data", failures)
+    waiting_check_method = waiting.split("func check()", 1)[1]
+    require("guard let session = Digits.sharedInstance().session()" in waiting_check_method and
+            "normalizedDigitsUserID(session.userID)" in waiting_check_method and
+            "session().userID" not in waiting_check_method,
+            "waiting refresh must require a normalized Digits session before posting",
+            failures)
+    waiting_response_callback = waiting_check_method.split(".responseJSON", 1)[1]
+    require("defer {" in waiting_response_callback and
+            "self.spinner.hidden = true" in waiting_response_callback and
+            "self.waitingText.hidden = false" in waiting_response_callback,
+            "waiting refresh must restore progress UI from the response callback",
+            failures)
+    require("guard error == nil, let jsonValue = json else" in waiting_response_callback and
+            "let responseJSON = JSON(jsonValue)" in waiting_response_callback and
+            "JSON(json!)" not in waiting_response_callback,
+            "waiting refresh must guard callback errors and missing JSON before parsing",
+            failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
     require("guard let userId = currentDigitsUserID() else" in get_data_method and
@@ -355,6 +374,9 @@ def main():
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
+        require("waiting refresh response guard" in content.lower(),
+                f"{path} must document waiting refresh response guard",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -381,6 +403,9 @@ def main():
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",
+            failures)
+    require("waiting refresh response guard" in changes.lower(),
+            "CHANGES must record waiting refresh response guard",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -418,6 +443,9 @@ def main():
     require("status: completed" in home_time_plan and "currentDigitsUserID" in home_time_plan and
             "successful Alamofire response" in home_time_plan,
             "home time submission guard plan must be completed and document both guards",
+            failures)
+    require("status: completed" in waiting_refresh_plan and "hostile mutations" in waiting_refresh_plan,
+            "waiting refresh response guard plan must record completed verification",
             failures)
     require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
             "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
