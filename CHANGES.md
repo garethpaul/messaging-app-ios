@@ -8,6 +8,9 @@
   `WhineLocation.xcodeproj` parsing without credentials or runtime service calls.
 - Added a pulse list user guard so message refreshes require a normalized
   Digits user ID and guarded response JSON before parsing.
+- Updated the SwiftyJSON RFC link to HTTPS documentation.
+- Added a GitHub Actions workflow that runs the static `make check` baseline
+  with Python 3.12 for pushes and pull requests.
 
 ## 2026-06-09
 

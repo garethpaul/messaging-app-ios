@@ -71,6 +71,7 @@ def main():
     required_files = [
         ".gitignore",
         ".github/workflows/check.yml",
+        ".github/CODEOWNERS",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -89,6 +90,7 @@ def main():
         "docs/plans/2026-06-09-pulse-send-throttle.md",
         "docs/plans/2026-06-10-pulse-list-user-guard.md",
         "docs/plans/2026-06-10-hosted-project-validation.md",
+        "docs/plans/2026-06-10-ci-baseline.md",
         "docs/plans/2026-06-10-home-time-submission-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
@@ -164,6 +166,7 @@ def main():
     pulse_send_throttle_plan = read("docs/plans/2026-06-09-pulse-send-throttle.md")
     pulse_list_plan = read("docs/plans/2026-06-10-pulse-list-user-guard.md")
     hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
+    ci_plan = read("docs/plans/2026-06-10-ci-baseline.md")
     home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
     workflow = read(".github/workflows/check.yml")
 
@@ -355,6 +358,12 @@ def main():
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
+        require("github actions" in content.lower(),
+                f"{path} must document hosted verification",
+                failures)
+        require("legacy sdk" in content.lower() or "legacy sdks" in content.lower(),
+                f"{path} must document the legacy SDK posture",
+                failures)
     require("Fabric/Crashlytics" in changes and "POST" in changes and "read-state" in changes,
             "CHANGES must record credential, request-method, and read-state hardening",
             failures)
@@ -381,6 +390,9 @@ def main():
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",
+            failures)
+    require("SwiftyJSON RFC link" in changes and "GitHub Actions" in changes,
+            "CHANGES must record documentation-link and hosted baseline work",
             failures)
     require("make lint" in changes and "make test" in changes and "make build" in changes and "make check" in changes,
             "CHANGES must record Make gate aliases",
@@ -415,6 +427,9 @@ def main():
     require("status: completed" in hosted_validation_plan and "make check" in hosted_validation_plan,
             "hosted project validation plan must be marked completed",
             failures)
+    require("status: completed" in ci_plan and "make check" in ci_plan,
+            "initial CI baseline plan must be completed",
+            failures)
     require("status: completed" in home_time_plan and "currentDigitsUserID" in home_time_plan and
             "successful Alamofire response" in home_time_plan,
             "home time submission guard plan must be completed and document both guards",
@@ -422,9 +437,14 @@ def main():
     require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
             "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
             "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" in workflow and
+            "persist-credentials: false" in workflow and
             "run: make check" in workflow,
             "Check workflow must stay pinned, read-only, and bounded",
             failures)
+    require(read(".github/CODEOWNERS").strip() == "* @garethpaul",
+            "CODEOWNERS must assign repository-wide ownership", failures)
+    require("https://datatracker.ietf.org/doc/html/rfc7231#section-4.3" in read("WhineLocation/SwiftyJSON.swift"),
+            "SwiftyJSON RFC documentation links must use HTTPS", failures)
 
     if shutil.which("xcodebuild"):
         result = subprocess.run(

@@ -96,6 +96,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Configuration and Secrets
 
 - Detected references to Twitter. Keep API keys, OAuth credentials, tokens, and account-specific values in local configuration only.
+- Fabric, TwitterKit, Digits, and Crashlytics are legacy SDKs in this preserved
+  prototype; keep their credential and migration assumptions documented until a
+  dedicated SDK migration replaces them.
 - Keep `WhineLocation/Info.plist` tracked with placeholder-safe metadata and privacy usage descriptions.
 - Do not commit Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, message fixtures, phone identity data, or location data.
 - Message read-state changes should preserve guarded Digits session lookup and array casts.
@@ -134,6 +137,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   throttle guardrail.
 - See `docs/plans/2026-06-10-pulse-list-user-guard.md` for the pulse list user
   guardrail.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions static
+  baseline and HTTPS documentation-link cleanup.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 
