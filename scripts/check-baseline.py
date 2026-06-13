@@ -13,6 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 OLD_FABRIC_API_KEY = "abb870ac2c6cd77fc0a3ee166f786a86748f4eb9"
 OLD_CRASHLYTICS_SECRET = "47d331d25396fd56e08c5c5891c16a003ba5647e584bf8fc07feb0e8ae92ab92"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+EXPECTED_MAKEFILE = """ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+
+.PHONY: build check lint test
+
+lint test build: check
+
+check:
+\tpython3 "$(ROOT)/scripts/check-baseline.py"
+"""
 
 
 def read(relative_path):
@@ -100,6 +109,7 @@ def main():
         "docs/plans/2026-06-10-hosted-project-validation.md",
         "docs/plans/2026-06-10-home-time-submission-guard.md",
         "docs/plans/2026-06-12-checkout-credential-boundary.md",
+        "docs/plans/2026-06-13-location-independent-make.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -176,6 +186,7 @@ def main():
     hosted_validation_plan = read("docs/plans/2026-06-10-hosted-project-validation.md")
     home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
     checkout_plan = read("docs/plans/2026-06-12-checkout-credential-boundary.md")
+    location_independent_make_plan = read("docs/plans/2026-06-13-location-independent-make.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -327,8 +338,16 @@ def main():
     for expected in ["*.local.xcconfig", "*.secrets.xcconfig", "*.local.plist", "*.secrets.plist", ".env"]:
         require(expected in gitignore, f".gitignore must include {expected}", failures)
 
-    require(".PHONY: build check lint test" in makefile and "lint test build: check" in makefile,
-            "Makefile must expose lint, test, build, and check gate targets",
+    require(makefile == EXPECTED_MAKEFILE,
+            "Makefile must exactly preserve rooted lint, test, build, and check gates",
+            failures)
+    require("make -f /path/to/messaging-app-ios/Makefile check" in readme,
+            "README must document location-independent Makefile invocation",
+            failures)
+    require("status: completed" in location_independent_make_plan and
+            "root and external-directory" in location_independent_make_plan and
+            "five isolated hostile mutations" in location_independent_make_plan,
+            "location-independent Make plan must record completed root, external, and mutation verification",
             failures)
 
     tracked = tracked_files()

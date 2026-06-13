@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-13
+
+- Made every Make verification alias resolve the static checker from the
+  checkout, including absolute Makefile invocations elsewhere.
+
 ## 2026-06-12
 
 - Stopped the hosted checkout from persisting its credential and added an exact
