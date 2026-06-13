@@ -1,6 +1,6 @@
 # Location-Independent Messaging iOS Verification
 
-status: in progress
+status: completed
 
 ## Context
 
@@ -30,3 +30,16 @@ fails outside the repository directory.
 
 This changes verification path resolution only. Rollback restores the relative
 checker recipe and removes its plan and documentation contracts.
+
+## Verification
+
+- All four Make aliases passed in root and external-directory runs through an
+  absolute Makefile path; local Linux validation truthfully reported that
+  `xcodebuild` is unavailable after the static baseline passed.
+- Python checker compilation, plist/XML/JSON/project parsing, and
+  `git diff --check` passed.
+- Verification rejected five isolated hostile mutations by their intended
+  contracts: root derivation, checker invocation, plan status, plan evidence,
+  and README guidance.
+- The intended five-file diff passed secret-pattern, conflict-marker,
+  generated-artifact, and Objective-C/project/workflow change audits.

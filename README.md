@@ -84,6 +84,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Digits login success guard, the new partner user guard, the location share
   user guard, the pulse send throttle, the pulse list user guard, and message
   read-state guards.
+- The Make gates are location-independent. From another directory, pass the
+  checkout's Makefile by absolute path, such as
+  `make -f /path/to/messaging-app-ios/Makefile check`.
 - Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout,
   runs `make check`, and parses `WhineLocation.xcodeproj` with
   `xcodebuild -list`. This hosted validation does not install pods, receive
@@ -126,6 +129,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   project, plist, credential, backend URL, Swift, or documentation changes.
+- Use an absolute Makefile path when running those gates outside the checkout.
 - See `docs/plans/2026-06-09-make-gate-aliases.md` for the local gate alias
   baseline.
 - See `docs/plans/2026-06-09-partner-prefix-preservation.md` for the partner
