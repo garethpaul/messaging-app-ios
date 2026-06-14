@@ -77,6 +77,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   when the screen disappears so navigation cannot accumulate refresh loops.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
+- The waiting session and response guard skips match checks without one
+  normalized Digits session and guards missing JSON before parsing.
 - The home time submission guard requires a normalized Digits user ID and only
   opens the next screen after a successful Alamofire response.
 
@@ -86,8 +88,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `scripts/check-baseline.py`, which verifies project wiring, credential
   placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
   Digits login success guard, the new partner user guard, the location share
-  user guard, the pulse send throttle, the pulse list user guard, and message
-  read-state guards.
+  user guard, the pulse send throttle, the pulse list user guard, the waiting
+  session and response guard, and message read-state guards.
 - The Make gates are location-independent. From another directory, pass the
   checkout's Makefile by absolute path, such as
   `make -f /path/to/messaging-app-ios/Makefile check`.
@@ -115,6 +117,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   state while a send refresh is pending.
 - The pulse list user guard should keep message list refreshes behind
   normalized Digits user IDs and guarded response JSON.
+- The waiting session and response guard should keep match requests behind one
+  normalized Digits session and complete loading state from the response path.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 - The home time submission guard should keep home-time POSTs behind normalized
   Digits session IDs and successful backend responses.

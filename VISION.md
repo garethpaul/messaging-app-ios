@@ -36,6 +36,7 @@ Priority:
 - Keep the pulse send session guard before request, throttle, and UI mutation
 - Keep one pulse refresh timer scoped to the visible controller lifecycle
 - Keep the pulse list user guard before refreshing message list state
+- Keep the waiting session and response guard before match requests and parsing
 - Keep the home time submission guard behind normalized identity and successful
   backend responses
 - Keep state-changing user, location, hometime, and beacon updates on POST
