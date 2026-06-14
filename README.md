@@ -73,6 +73,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   refresh cooldown so repeat taps do not post duplicate messages.
 - The pulse send session guard returns before request, throttle, or UI changes
   when the Digits session or normalized user ID is unavailable.
+- The pulse refresh timer is owned by the visible controller and invalidated
+  when the screen disappears so navigation cannot accumulate refresh loops.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
 - The home time submission guard requires a normalized Digits user ID and only

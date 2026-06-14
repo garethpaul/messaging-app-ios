@@ -107,6 +107,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     // move bar up
     var kbHeight: CGFloat!
+    var refreshTimer: NSTimer?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -129,7 +130,8 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("keyboardWillShow:"), name: UIKeyboardWillShowNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("keyboardWillHide:"), name: UIKeyboardWillHideNotification, object: nil)
 
-        NSTimer.scheduledTimerWithTimeInterval(
+        refreshTimer?.invalidate()
+        refreshTimer = NSTimer.scheduledTimerWithTimeInterval(
             30.0,
             target: self,
             selector: Selector("getData"),
@@ -143,6 +145,8 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         super.viewWillDisappear(animated)
 
         NSNotificationCenter.defaultCenter().removeObserver(self)
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 
     func keyboardWillShow(notification: NSNotification) {
