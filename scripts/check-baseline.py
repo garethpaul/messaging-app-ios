@@ -111,6 +111,7 @@ def main():
         "docs/plans/2026-06-12-checkout-credential-boundary.md",
         "docs/plans/2026-06-13-location-independent-make.md",
         "docs/plans/2026-06-14-pulse-send-session-guard.md",
+        "docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -189,6 +190,7 @@ def main():
     checkout_plan = read("docs/plans/2026-06-12-checkout-credential-boundary.md")
     location_independent_make_plan = read("docs/plans/2026-06-13-location-independent-make.md")
     pulse_send_session_plan = read("docs/plans/2026-06-14-pulse-send-session-guard.md")
+    pulse_timer_plan = read("docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -365,6 +367,29 @@ def main():
             "hostile mutations" in pulse_send_session_plan and
             "all four Make gates" in pulse_send_session_plan,
             "pulse send session plan must record completed status and verification",
+            failures)
+    appear_start = pulse.find("override func viewWillAppear")
+    disappear_start = pulse.find("override func viewWillDisappear")
+    appear_body = pulse[appear_start:disappear_start]
+    disappear_end = pulse.find("\n    func keyboardWillShow", disappear_start)
+    disappear_body = pulse[disappear_start:disappear_end]
+    require("var refreshTimer: NSTimer?" in pulse and
+            appear_body.find("refreshTimer?.invalidate()") >= 0 and
+            appear_body.find("refreshTimer = NSTimer.scheduledTimerWithTimeInterval(") > appear_body.find("refreshTimer?.invalidate()") and
+            disappear_body.find("refreshTimer?.invalidate()") >= 0 and
+            disappear_body.find("refreshTimer = nil") > disappear_body.find("refreshTimer?.invalidate()"),
+            "PulseViewController must own and invalidate its repeating refresh timer",
+            failures)
+    require("pulse refresh timer" in readme.lower() and
+            "pulse refresh timer" in vision.lower() and
+            "pulse refresh timer" in security.lower() and
+            "pulse refresh timer" in changes.lower(),
+            "project guidance must document pulse refresh timer lifecycle",
+            failures)
+    require("Status: completed" in pulse_timer_plan and
+            "Five isolated hostile mutations were rejected" in pulse_timer_plan and
+            "All four Make gates passed" in pulse_timer_plan,
+            "pulse refresh timer plan must record completed status and verification",
             failures)
 
     tracked = tracked_files()

@@ -2,6 +2,7 @@
 
 ## 2026-06-14
 
+- Scoped the repeating pulse refresh timer to the visible controller lifecycle.
 - Added a pulse send session guard before request, throttle, text, or button
   mutation when the Digits session or normalized user ID is unavailable.
 

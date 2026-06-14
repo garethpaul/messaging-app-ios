@@ -1,6 +1,6 @@
 # Pulse Refresh Timer Lifecycle
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -30,3 +30,14 @@ disappears.
 
 - Timer behavior remains tied to the run loop used by the legacy Swift sample.
 - The stacked base PR must merge first and remain open until then.
+
+## Verification Completed
+
+- All four Make gates passed from the checkout and an external directory.
+- Five isolated hostile mutations were rejected: removed timer ownership,
+  removed pre-schedule invalidation, removed disappearance invalidation, removed
+  timer clearing, and stale plan status.
+- Exact diff, generated-artifact, conflict-marker, intended-path, and
+  secret-pattern audits passed.
+- `xcodebuild` is unavailable on this Linux host, so no simulator or device
+  lifecycle execution is claimed.
