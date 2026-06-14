@@ -71,6 +71,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   without erasing already-entered partner input when the field is focused again.
 - The pulse send throttle marks message sends unavailable during the short
   refresh cooldown so repeat taps do not post duplicate messages.
+- The pulse send session guard returns before request, throttle, or UI changes
+  when the Digits session or normalized user ID is unavailable.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
 - The home time submission guard requires a normalized Digits user ID and only

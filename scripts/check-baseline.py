@@ -110,6 +110,7 @@ def main():
         "docs/plans/2026-06-10-home-time-submission-guard.md",
         "docs/plans/2026-06-12-checkout-credential-boundary.md",
         "docs/plans/2026-06-13-location-independent-make.md",
+        "docs/plans/2026-06-14-pulse-send-session-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -187,6 +188,7 @@ def main():
     home_time_plan = read("docs/plans/2026-06-10-home-time-submission-guard.md")
     checkout_plan = read("docs/plans/2026-06-12-checkout-credential-boundary.md")
     location_independent_make_plan = read("docs/plans/2026-06-13-location-independent-make.md")
+    pulse_send_session_plan = read("docs/plans/2026-06-14-pulse-send-session-guard.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -332,6 +334,16 @@ def main():
             "sendAvailable == true" not in send_msg_method,
             "Pulse send throttle must assign cooldown state instead of comparing it",
             failures)
+    session_guard_index = send_msg_method.find("guard let digitsSession = Digits.sharedInstance().session()")
+    normalized_user_index = send_msg_method.find("let userId = normalizedDigitsUserID(digitsSession.userID)")
+    throttle_index = send_msg_method.find("if sendAvailable {")
+    request_index = send_msg_method.find('Alamofire.request(.POST, getInfo("pulseListSendUrl")')
+    require(0 <= session_guard_index < normalized_user_index < throttle_index < request_index and
+            '"userId": userId' in send_msg_method and
+            '"phoneNumber": digitsSession.phoneNumber' in send_msg_method and
+            "Digits.sharedInstance().session()." not in send_msg_method,
+            "Pulse send must resolve one valid session before throttle, UI, and request mutation",
+            failures)
 
     for forbidden in ["Info.plist\n", "*.plist"]:
         require(forbidden not in gitignore, ".gitignore must not ignore committed plist baselines", failures)
@@ -348,6 +360,11 @@ def main():
             "root and external-directory" in location_independent_make_plan and
             "five isolated hostile mutations" in location_independent_make_plan,
             "location-independent Make plan must record completed root, external, and mutation verification",
+            failures)
+    require("status: completed" in pulse_send_session_plan and
+            "hostile mutations" in pulse_send_session_plan and
+            "all four Make gates" in pulse_send_session_plan,
+            "pulse send session plan must record completed status and verification",
             failures)
 
     tracked = tracked_files()
@@ -383,6 +400,9 @@ def main():
         require("pulse send throttle" in content.lower(),
                 f"{path} must document pulse send throttle",
                 failures)
+        require("pulse send session guard" in content.lower(),
+                f"{path} must document pulse send session guard",
+                failures)
         require("pulse list user guard" in content.lower(),
                 f"{path} must document pulse list user guard",
                 failures)
@@ -409,6 +429,9 @@ def main():
             failures)
     require("pulse send throttle" in changes.lower(),
             "CHANGES must record pulse send throttle",
+            failures)
+    require("pulse send session guard" in changes.lower(),
+            "CHANGES must record pulse send session guard",
             failures)
     require("pulse list user guard" in changes.lower(),
             "CHANGES must record pulse list user guard",

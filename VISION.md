@@ -33,6 +33,7 @@ Priority:
 - Keep partner prefix preservation from erasing already-entered partner numbers
 - Keep the location share user guard before posting location updates
 - Keep the pulse send throttle from allowing repeat message posts during cooldown
+- Keep the pulse send session guard before request, throttle, and UI mutation
 - Keep the pulse list user guard before refreshing message list state
 - Keep the home time submission guard behind normalized identity and successful
   backend responses

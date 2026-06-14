@@ -170,6 +170,11 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     @IBAction func sendMsg(sender: AnyObject) {
 
+        guard let digitsSession = Digits.sharedInstance().session(),
+            let userId = normalizedDigitsUserID(digitsSession.userID) else {
+                return
+        }
+
         if sendAvailable {
 
             // send Available is False
@@ -179,7 +184,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
             self.sendBtn.setTitleColor(UIColor.redColor(), forState: UIControlState.Normal)
 
             // Send HTTP Request
-            Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": Digits.sharedInstance().session().userID, "phoneNumber": Digits.sharedInstance().session().phoneNumber, "msg": self.textField.text])
+            Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text])
 
             // Set Text Field Empty
             self.textField.text = ""

@@ -48,6 +48,8 @@ Helpful reports include:
 - Partner prefix preservation should not erase a partially entered partner number when the partner field is focused again.
 - The location share user guard should require a normalized Digits user ID before posting location coordinates.
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
+- The pulse send session guard should require one valid Digits session and
+  normalized user ID before request, throttle, text, or button mutations.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
 - The home time submission guard should require a normalized Digits user ID
