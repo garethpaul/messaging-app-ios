@@ -112,6 +112,7 @@ def main():
         "docs/plans/2026-06-13-location-independent-make.md",
         "docs/plans/2026-06-14-pulse-send-session-guard.md",
         "docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md",
+        "docs/plans/2026-06-14-waiting-session-response-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -191,6 +192,7 @@ def main():
     location_independent_make_plan = read("docs/plans/2026-06-13-location-independent-make.md")
     pulse_send_session_plan = read("docs/plans/2026-06-14-pulse-send-session-guard.md")
     pulse_timer_plan = read("docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md")
+    waiting_guard_plan = read("docs/plans/2026-06-14-waiting-session-response-guard.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -311,6 +313,30 @@ def main():
         ("WhineLocation/PulseViewController.swift", pulse),
     ]:
         require("println(" not in source, f"{path} must not log message, phone, or network data", failures)
+    waiting_check = waiting.split("func check()", 1)[1].split("private func finishWaitingCheck", 1)[0]
+    waiting_session_index = waiting_check.find("guard let digitsSession = Digits.sharedInstance().session()")
+    waiting_normalized_user_index = waiting_check.find("let userId = normalizedDigitsUserID(digitsSession.userID)")
+    waiting_request_index = waiting_check.find('Alamofire.request(.POST, getInfo("waitingUrl")')
+    waiting_response_index = waiting_check.find(".responseJSON")
+    waiting_response_finish_index = waiting_check.find("self.finishWaitingCheck()", waiting_response_index)
+    waiting_json_guard_index = waiting_check.find("guard error == nil, let jsonValue = json else")
+    waiting_parse_index = waiting_check.find("var responseJSON = JSON(jsonValue)")
+    require(0 <= waiting_session_index < waiting_normalized_user_index < waiting_request_index and
+            '"userId": userId' in waiting_check and
+            '"phoneNumber": digitsSession.phoneNumber' in waiting_check and
+            "Digits.sharedInstance().session()." not in waiting_check,
+            "Waiting match checks must resolve one normalized Digits session before requesting",
+            failures)
+    require(0 <= waiting_response_index < waiting_response_finish_index < waiting_json_guard_index < waiting_parse_index and
+            "JSON(json!)" not in waiting_check and
+            waiting_check.count("self.finishWaitingCheck()") == 2,
+            "Waiting match checks must finish UI state and guard response JSON before parsing",
+            failures)
+    require("private func finishWaitingCheck()" in waiting and
+            "self.spinner.hidden = true" in waiting and
+            "self.waitingText.hidden = false" in waiting,
+            "Waiting match checks must centralize loading-state completion",
+            failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
     require("guard let userId = currentDigitsUserID() else" in get_data_method and
@@ -367,6 +393,13 @@ def main():
             "hostile mutations" in pulse_send_session_plan and
             "all four Make gates" in pulse_send_session_plan,
             "pulse send session plan must record completed status and verification",
+            failures)
+    require("Status: completed" in waiting_guard_plan and
+            "All four Make gates passed" in waiting_guard_plan and
+            "Six isolated hostile mutations were rejected" in waiting_guard_plan and
+            "external directory" in waiting_guard_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_guard_plan, "Verification Completed")),
+            "waiting session and response guard plan must record completed verification",
             failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
@@ -431,6 +464,9 @@ def main():
         require("pulse list user guard" in content.lower(),
                 f"{path} must document pulse list user guard",
                 failures)
+        require("waiting session and response guard" in content.lower(),
+                f"{path} must document the waiting session and response guard",
+                failures)
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
@@ -460,6 +496,9 @@ def main():
             failures)
     require("pulse list user guard" in changes.lower(),
             "CHANGES must record pulse list user guard",
+            failures)
+    require("waiting session and response guard" in changes.lower(),
+            "CHANGES must record waiting session and response guard hardening",
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",

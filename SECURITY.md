@@ -54,6 +54,8 @@ Helpful reports include:
   so navigation cannot accumulate background refresh requests.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
+- The waiting session and response guard should require one normalized Digits
+  session and guarded response JSON before parsing match state.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
 

@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- Added a waiting session and response guard before match requests and JSON
+  parsing, with loading-state completion tied to guarded outcomes.
 - Scoped the repeating pulse refresh timer to the visible controller lifecycle.
 - Added a pulse send session guard before request, throttle, text, or button
   mutation when the Digits session or normalized user ID is unavailable.

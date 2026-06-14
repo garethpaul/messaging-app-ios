@@ -28,23 +28,30 @@ class WaitingViewController: UIViewController {
         let delayTime = dispatch_time(DISPATCH_TIME_NOW,
             Int64(2 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
+            guard let digitsSession = Digits.sharedInstance().session(),
+                let userId = normalizedDigitsUserID(digitsSession.userID) else {
+                    self.finishWaitingCheck()
+                    return
+            }
 
-            let userId = Digits.sharedInstance().session().userID
-            let userPhoneNumber = Digits.sharedInstance().session().phoneNumber
-            Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": userPhoneNumber]).responseJSON { (req, res, json, error) in
-                if (error == nil) {
-                    var json = JSON(json!)
-                    if let match = json["match"].string {
-                        if match == "True" {
-                            // there is now a match
-                            self.performSegueWithIdentifier("NavigationViewController", sender: self)
-                        }
-                    }
+            Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber]).responseJSON { (req, res, json, error) in
+                self.finishWaitingCheck()
+                guard error == nil, let jsonValue = json else {
+                    return
+                }
+
+                var responseJSON = JSON(jsonValue)
+                if responseJSON["match"].string == "True" {
+                    // there is now a match
+                    self.performSegueWithIdentifier("NavigationViewController", sender: self)
                 }
             }
-            self.spinner.hidden = true
-            self.waitingText.hidden = false
         }
+    }
+
+    private func finishWaitingCheck() {
+        self.spinner.hidden = true
+        self.waitingText.hidden = false
     }
 
 }

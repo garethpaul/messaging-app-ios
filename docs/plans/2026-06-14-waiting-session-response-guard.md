@@ -1,6 +1,6 @@
 # Waiting Session And Response Guard
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -54,8 +54,23 @@ instead of when the request completes.
 
 ## Work Completed
 
-Pending implementation.
+- Resolved one Digits session and normalized user ID before the delayed waiting
+  request and reused that session's phone number.
+- Returned without a request when identity is unavailable and removed direct
+  session dereferences.
+- Guarded response errors and missing JSON before parsing, removed the force
+  unwrap, and centralized loading-state completion for early and callback exits.
+- Added method-scoped static contracts and project guidance.
 
 ## Verification Completed
 
-Pending validation.
+- All four Make gates passed from the checkout and the canonical check passed
+  from an external directory through the absolute Makefile path.
+- Six isolated hostile mutations were rejected: direct session dereference,
+  missing identity normalization, restored JSON force unwrap, UI completion
+  before response handling, missing maintenance guidance, and stale plan status.
+- Checker compilation, `git diff --check`, and exact intended-path,
+  generated-artifact, secret-pattern, conflict-marker, binary, and large-file
+  audits passed.
+- `xcodebuild` is unavailable on this Linux host, so no simulator, device,
+  Digits session, backend response, or UI lifecycle execution is claimed.
