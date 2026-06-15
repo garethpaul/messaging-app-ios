@@ -81,6 +81,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   normalized Digits session and guards missing JSON before parsing.
 - The waiting concurrent check guard prevents overlapping refresh requests and
   repeated navigation after a successful match.
+- The waiting view activity guard prevents delayed checks and responses from
+  requesting or navigating after the controller leaves the screen.
 - The home time submission guard requires a normalized Digits user ID and only
   opens the next screen after a successful Alamofire response.
 
@@ -123,6 +125,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   normalized Digits session and complete loading state from the response path.
 - The waiting concurrent check guard should keep only one match check in flight
   and make successful navigation terminal for that controller.
+- The waiting view activity guard should make delayed requests and responses
+  inert after the waiting controller disappears.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 - The home time submission guard should keep home-time POSTs behind normalized
   Digits session IDs and successful backend responses.
