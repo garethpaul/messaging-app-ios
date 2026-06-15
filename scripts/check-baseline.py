@@ -113,6 +113,7 @@ def main():
         "docs/plans/2026-06-14-pulse-send-session-guard.md",
         "docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md",
         "docs/plans/2026-06-14-waiting-session-response-guard.md",
+        "docs/plans/2026-06-15-waiting-concurrent-check-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -193,6 +194,7 @@ def main():
     pulse_send_session_plan = read("docs/plans/2026-06-14-pulse-send-session-guard.md")
     pulse_timer_plan = read("docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md")
     waiting_guard_plan = read("docs/plans/2026-06-14-waiting-session-response-guard.md")
+    waiting_concurrent_plan = read("docs/plans/2026-06-15-waiting-concurrent-check-guard.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -314,6 +316,9 @@ def main():
     ]:
         require("println(" not in source, f"{path} must not log message, phone, or network data", failures)
     waiting_check = waiting.split("func check()", 1)[1].split("private func finishWaitingCheck", 1)[0]
+    waiting_guard_index = waiting_check.find("guard !isChecking && !hasMatched else")
+    waiting_start_index = waiting_check.find("isChecking = true")
+    waiting_loading_index = waiting_check.find("self.spinner.hidden = false")
     waiting_session_index = waiting_check.find("guard let digitsSession = Digits.sharedInstance().session()")
     waiting_normalized_user_index = waiting_check.find("let userId = normalizedDigitsUserID(digitsSession.userID)")
     waiting_request_index = waiting_check.find('Alamofire.request(.POST, getInfo("waitingUrl")')
@@ -321,6 +326,13 @@ def main():
     waiting_response_finish_index = waiting_check.find("self.finishWaitingCheck()", waiting_response_index)
     waiting_json_guard_index = waiting_check.find("guard error == nil, let jsonValue = json else")
     waiting_parse_index = waiting_check.find("var responseJSON = JSON(jsonValue)")
+    waiting_matched_index = waiting_check.find("self.hasMatched = true")
+    waiting_segue_index = waiting_check.find('self.performSegueWithIdentifier("NavigationViewController", sender: self)')
+    require("private var isChecking = false" in waiting and
+            "private var hasMatched = false" in waiting and
+            0 <= waiting_guard_index < waiting_start_index < waiting_loading_index,
+            "Waiting match checks must reject overlapping and post-match refreshes before loading starts",
+            failures)
     require(0 <= waiting_session_index < waiting_normalized_user_index < waiting_request_index and
             '"userId": userId' in waiting_check and
             '"phoneNumber": digitsSession.phoneNumber' in waiting_check and
@@ -333,9 +345,13 @@ def main():
             "Waiting match checks must finish UI state and guard response JSON before parsing",
             failures)
     require("private func finishWaitingCheck()" in waiting and
+            waiting.find("self.isChecking = false", waiting.find("private func finishWaitingCheck()")) >= 0 and
             "self.spinner.hidden = true" in waiting and
             "self.waitingText.hidden = false" in waiting,
             "Waiting match checks must centralize loading-state completion",
+            failures)
+    require(0 <= waiting_matched_index < waiting_segue_index,
+            "Waiting match checks must mark terminal match state before navigation",
             failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
@@ -400,6 +416,13 @@ def main():
             "external directory" in waiting_guard_plan and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_guard_plan, "Verification Completed")),
             "waiting session and response guard plan must record completed verification",
+            failures)
+    require("Status: completed" in waiting_concurrent_plan and
+            "All four Make gates passed" in waiting_concurrent_plan and
+            "Six isolated hostile mutations were rejected" in waiting_concurrent_plan and
+            "external directory" in waiting_concurrent_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_concurrent_plan, "Verification Completed")),
+            "waiting concurrent check guard plan must record completed verification",
             failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
@@ -467,6 +490,9 @@ def main():
         require("waiting session and response guard" in content.lower(),
                 f"{path} must document the waiting session and response guard",
                 failures)
+        require("waiting concurrent check guard" in content.lower(),
+                f"{path} must document the waiting concurrent check guard",
+                failures)
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
@@ -499,6 +525,9 @@ def main():
             failures)
     require("waiting session and response guard" in changes.lower(),
             "CHANGES must record waiting session and response guard hardening",
+            failures)
+    require("waiting concurrent check guard" in changes.lower(),
+            "CHANGES must record waiting concurrent check guard hardening",
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",

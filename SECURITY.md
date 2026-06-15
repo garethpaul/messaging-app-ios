@@ -56,6 +56,8 @@ Helpful reports include:
   guarded response JSON before refreshing message list state.
 - The waiting session and response guard should require one normalized Digits
   session and guarded response JSON before parsing match state.
+- The waiting concurrent check guard should prevent overlapping match requests
+  and repeated successful navigation.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
 
