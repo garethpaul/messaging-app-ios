@@ -1,6 +1,6 @@
 # Waiting Appearance Generation Guard
 
-Status: in progress
+Status: completed
 
 ## Problem
 
@@ -48,3 +48,31 @@ active, and later appearances do not automatically retry.
   their captured generation.
 - `Int` generation overflow is not material for a controller appearance count.
 - The stacked base pull request must remain available and merge first.
+
+## Work Completed
+
+- Moved automatic match checking from `viewDidLoad` into the active appearance
+  lifecycle so initial and later appearances follow the same ordering.
+- Added a monotonically increasing appearance generation, captured it when each
+  check starts, and invalidated it when the view disappears.
+- Required both delayed work and backend responses to belong to the current
+  active generation before they can request, update state, or navigate.
+- Made stale callback exits side-effect free so they cannot release a newer
+  appearance's in-flight request guard.
+- Added dependency-free contracts and project guidance for controller re-entry.
+
+## Verification Completed
+
+- All four Make gates passed from the repository and the canonical check passed
+  from an external directory through the absolute Makefile path.
+- The baseline checker compiled and passed; local Linux reported the existing
+  `xcodebuild` limitation and completed the static iOS baseline.
+- Eight isolated hostile mutations were rejected: restored `viewDidLoad`
+  scheduling, missing appearance generation increment, missing delayed-work
+  generation comparison, missing response generation comparison, missing
+  disappearance invalidation, stale-callback request-state release, missing
+  guidance, and stale plan status.
+- `git diff --check`, exact intended-path, generated-artifact,
+  credential-pattern, project-file integrity, conflict-marker, binary, and
+  large-file audits passed.
+- No live Digits, backend, location, or messaging service was contacted.

@@ -197,6 +197,7 @@ def main():
     waiting_guard_plan = read("docs/plans/2026-06-14-waiting-session-response-guard.md")
     waiting_concurrent_plan = read("docs/plans/2026-06-15-waiting-concurrent-check-guard.md")
     waiting_activity_plan = read("docs/plans/2026-06-15-waiting-view-activity-guard.md")
+    waiting_generation_plan = read("docs/plans/2026-06-15-waiting-appearance-generation-guard.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -320,6 +321,7 @@ def main():
     waiting_check = waiting.split("func check()", 1)[1].split("private func finishWaitingCheck", 1)[0]
     waiting_guard_index = waiting_check.find("guard !isChecking && !hasMatched else")
     waiting_start_index = waiting_check.find("isChecking = true")
+    waiting_generation_capture_index = waiting_check.find("let checkGeneration = waitingViewGeneration")
     waiting_loading_index = waiting_check.find("self.spinner.hidden = false")
     waiting_session_index = waiting_check.find("guard let digitsSession = Digits.sharedInstance().session()")
     waiting_normalized_user_index = waiting_check.find("let userId = normalizedDigitsUserID(digitsSession.userID)")
@@ -330,10 +332,15 @@ def main():
     waiting_parse_index = waiting_check.find("var responseJSON = JSON(jsonValue)")
     waiting_matched_index = waiting_check.find("self.hasMatched = true")
     waiting_segue_index = waiting_check.find('self.performSegueWithIdentifier("NavigationViewController", sender: self)')
-    waiting_activity_guards = waiting_check.count("guard self.isWaitingViewActive else")
+    waiting_generation_guard = "guard self.isWaitingViewActive && checkGeneration == self.waitingViewGeneration else"
+    waiting_generation_guards = waiting_check.count(waiting_generation_guard)
+    waiting_side_effect_free_generation_exits = len(re.findall(
+        re.escape(waiting_generation_guard) + r"\s*\{\s*return\s*\}",
+        waiting_check,
+    ))
     require("private var isChecking = false" in waiting and
             "private var hasMatched = false" in waiting and
-            0 <= waiting_guard_index < waiting_start_index < waiting_loading_index,
+            0 <= waiting_guard_index < waiting_start_index < waiting_generation_capture_index < waiting_loading_index,
             "Waiting match checks must reject overlapping and post-match refreshes before loading starts",
             failures)
     require(0 <= waiting_session_index < waiting_normalized_user_index < waiting_request_index and
@@ -367,10 +374,17 @@ def main():
             "finishWaitingCheck()" in waiting_disappear_body,
             "WaitingViewController must track visible lifecycle and release retry state",
             failures)
-    require(waiting_activity_guards == 2 and
-            waiting_check.find("guard self.isWaitingViewActive else") < waiting_session_index and
-            waiting_check.rfind("guard self.isWaitingViewActive else") < waiting_response_finish_index,
-            "Waiting checks must gate delayed requests and responses on active view state",
+    require("private var waitingViewGeneration = 0" in waiting and
+            "override func viewDidLoad" not in waiting and
+            waiting_appear_body.find("isWaitingViewActive = true") < waiting_appear_body.find("waitingViewGeneration += 1") < waiting_appear_body.find("check()") and
+            waiting_disappear_body.find("isWaitingViewActive = false") < waiting_disappear_body.find("waitingViewGeneration += 1") < waiting_disappear_body.find("finishWaitingCheck()"),
+            "WaitingViewController must start checks in and invalidate checks across appearance generations",
+            failures)
+    require(waiting_generation_guards == 2 and
+            waiting_side_effect_free_generation_exits == 2 and
+            waiting_check.find(waiting_generation_guard) < waiting_session_index and
+            waiting_check.rfind(waiting_generation_guard) < waiting_response_finish_index,
+            "Waiting checks must reject stale appearance work without mutating current state",
             failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
@@ -450,6 +464,13 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_activity_plan, "Verification Completed")),
             "waiting view activity guard plan must record completed verification",
             failures)
+    require("Status: completed" in waiting_generation_plan and
+            "All four Make gates passed" in waiting_generation_plan and
+            "Eight isolated hostile mutations were rejected" in waiting_generation_plan and
+            "external directory" in waiting_generation_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_generation_plan, "Verification Completed")),
+            "waiting appearance generation guard plan must record completed verification",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -522,6 +543,9 @@ def main():
         require("waiting view activity guard" in content.lower(),
                 f"{path} must document the waiting view activity guard",
                 failures)
+        require("waiting appearance generation guard" in content.lower(),
+                f"{path} must document the waiting appearance generation guard",
+                failures)
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
@@ -560,6 +584,9 @@ def main():
             failures)
     require("waiting view activity guard" in changes.lower(),
             "CHANGES must record waiting view activity guard hardening",
+            failures)
+    require("waiting appearance generation guard" in changes.lower(),
+            "CHANGES must record waiting appearance generation guard hardening",
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",

@@ -9,20 +9,19 @@ class WaitingViewController: UIViewController {
     private var isChecking = false
     private var hasMatched = false
     private var isWaitingViewActive = false
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        check()
-    }
+    private var waitingViewGeneration = 0
 
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         isWaitingViewActive = true
+        waitingViewGeneration += 1
+        check()
     }
 
     override func viewWillDisappear(animated: Bool) {
         super.viewWillDisappear(animated)
         isWaitingViewActive = false
+        waitingViewGeneration += 1
         finishWaitingCheck()
     }
 
@@ -41,14 +40,14 @@ class WaitingViewController: UIViewController {
         }
 
         isChecking = true
+        let checkGeneration = waitingViewGeneration
         self.spinner.hidden = false
         self.waitingText.hidden = true
 
         let delayTime = dispatch_time(DISPATCH_TIME_NOW,
             Int64(2 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
-            guard self.isWaitingViewActive else {
-                self.isChecking = false
+            guard self.isWaitingViewActive && checkGeneration == self.waitingViewGeneration else {
                 return
             }
 
@@ -59,8 +58,7 @@ class WaitingViewController: UIViewController {
             }
 
             Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber]).responseJSON { (req, res, json, error) in
-                guard self.isWaitingViewActive else {
-                    self.isChecking = false
+                guard self.isWaitingViewActive && checkGeneration == self.waitingViewGeneration else {
                     return
                 }
 

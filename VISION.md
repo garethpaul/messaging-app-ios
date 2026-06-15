@@ -39,6 +39,7 @@ Priority:
 - Keep the waiting session and response guard before match requests and parsing
 - Keep the waiting concurrent check guard around delayed requests and navigation
 - Keep the waiting view activity guard around delayed work and response handling
+- Keep the waiting appearance generation guard across controller re-entry
 - Keep the home time submission guard behind normalized identity and successful
   backend responses
 - Keep state-changing user, location, hometime, and beacon updates on POST

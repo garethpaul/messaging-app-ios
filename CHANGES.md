@@ -6,6 +6,8 @@
   requests and repeated navigation after a successful response.
 - Added a waiting view activity guard so delayed work and responses become inert
   after the controller leaves the screen.
+- Added a waiting appearance generation guard so a callback from an earlier
+  appearance cannot mutate state or navigate after controller re-entry.
 
 ## 2026-06-14
 
