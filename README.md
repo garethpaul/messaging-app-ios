@@ -87,6 +87,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   each appearance and permanently rejects callbacks from an earlier appearance.
 - The waiting active check entry guard rejects off-screen check starts before
   request state or loading UI can change.
+- Waiting request cancellation stops retained Alamofire transport when the
+  controller disappears and identity-binds callback cleanup across re-entry.
 - The home time submission guard requires a normalized Digits user ID and only
   opens the next screen after a successful Alamofire response.
 
@@ -135,6 +137,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   response to the controller appearance that started it.
 - The waiting active check entry guard should keep inactive callers from
   stranding the one-request state before the next appearance.
+- Waiting request cancellation should stop obsolete transport without allowing
+  a canceled callback to clear a newer appearance's request.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 - The home time submission guard should keep home-time POSTs behind normalized
   Digits session IDs and successful backend responses.

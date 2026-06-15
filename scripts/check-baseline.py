@@ -117,6 +117,7 @@ def main():
         "docs/plans/2026-06-15-waiting-view-activity-guard.md",
         "docs/plans/2026-06-15-waiting-appearance-generation-guard.md",
         "docs/plans/2026-06-15-waiting-active-check-entry.md",
+        "docs/plans/2026-06-15-waiting-request-cancellation.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -201,6 +202,7 @@ def main():
     waiting_activity_plan = read("docs/plans/2026-06-15-waiting-view-activity-guard.md")
     waiting_generation_plan = read("docs/plans/2026-06-15-waiting-appearance-generation-guard.md")
     waiting_active_entry_plan = read("docs/plans/2026-06-15-waiting-active-check-entry.md")
+    waiting_request_cancellation_plan = read("docs/plans/2026-06-15-waiting-request-cancellation.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -331,6 +333,8 @@ def main():
     waiting_normalized_user_index = waiting_check.find("let userId = normalizedDigitsUserID(digitsSession.userID)")
     waiting_request_index = waiting_check.find('Alamofire.request(.POST, getInfo("waitingUrl")')
     waiting_response_index = waiting_check.find(".responseJSON")
+    waiting_request_identity_index = waiting_check.find("guard self.waitingRequest === request else")
+    waiting_request_clear_index = waiting_check.find("self.waitingRequest = nil", waiting_response_index)
     waiting_response_finish_index = waiting_check.find("self.finishWaitingCheck()", waiting_response_index)
     waiting_json_guard_index = waiting_check.find("guard error == nil, let jsonValue = json else")
     waiting_parse_index = waiting_check.find("var responseJSON = JSON(jsonValue)")
@@ -394,6 +398,15 @@ def main():
             waiting_check.find(waiting_generation_guard) < waiting_session_index and
             waiting_check.rfind(waiting_generation_guard) < waiting_response_finish_index,
             "Waiting checks must reject stale appearance work without mutating current state",
+            failures)
+    waiting_cancel_index = waiting_disappear_body.find("waitingRequest?.cancel()")
+    waiting_disappear_clear_index = waiting_disappear_body.find("waitingRequest = nil")
+    waiting_disappear_finish_index = waiting_disappear_body.find("finishWaitingCheck()")
+    require("private var waitingRequest: Request?" in waiting and
+            0 <= waiting_cancel_index < waiting_disappear_clear_index < waiting_disappear_finish_index and
+            waiting_check.find("let request = Alamofire.request(.POST") < waiting_check.find("self.waitingRequest = request") < waiting_response_index and
+            waiting_response_index < waiting_request_identity_index < waiting_check.rfind(waiting_generation_guard) < waiting_request_clear_index < waiting_response_finish_index,
+            "Waiting transport work must be retained, cancelled on disappearance, and identity-bound before callback cleanup",
             failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
@@ -487,6 +500,14 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_active_entry_plan, "Verification Completed")),
             "waiting active check entry guard plan must record completed verification",
             failures)
+    require("Status: completed" in waiting_request_cancellation_plan and
+            "All four Make gates passed" in waiting_request_cancellation_plan and
+            "Seven isolated hostile mutations were rejected" in waiting_request_cancellation_plan and
+            "external directory" in waiting_request_cancellation_plan and
+            "Xcode is unavailable on Linux" in waiting_request_cancellation_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_request_cancellation_plan, "Verification Completed")),
+            "waiting request cancellation plan must record completed verification",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -565,6 +586,9 @@ def main():
         require("waiting active check entry guard" in content.lower(),
                 f"{path} must document the waiting active check entry guard",
                 failures)
+        require("waiting request cancellation" in content.lower(),
+                f"{path} must document waiting request cancellation",
+                failures)
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
@@ -609,6 +633,9 @@ def main():
             failures)
     require("waiting active check entry guard" in changes.lower(),
             "CHANGES must record waiting active check entry guard hardening",
+            failures)
+    require("waiting request cancellation" in changes.lower(),
+            "CHANGES must record waiting request cancellation hardening",
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",

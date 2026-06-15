@@ -2,6 +2,8 @@
 
 ## 2026-06-15
 
+- Added waiting request cancellation so obsolete Alamofire transport is stopped
+  without allowing canceled callbacks to clear a newer request.
 - Added a waiting concurrent check guard to prevent overlapping delayed match
   requests and repeated navigation after a successful response.
 - Added a waiting view activity guard so delayed work and responses become inert

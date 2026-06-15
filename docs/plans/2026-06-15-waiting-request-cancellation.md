@@ -1,6 +1,6 @@
 # Waiting Request Cancellation
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -58,3 +58,24 @@ request reference cleanup must be bound to the exact request instance.
 - A callback from a canceled prior request cannot clear or complete a newer
   request after controller re-entry.
 - Existing generation and activity checks remain independently enforced.
+
+## Work Completed
+
+- Retained the exact Alamofire waiting request after delayed and session guards
+  allow transport to start.
+- Cancelled and cleared retained transport during disappearance before releasing
+  the existing waiting-check UI state.
+- Identity-bound response cleanup before generation checks and current request
+  state changes so callbacks from canceled requests cannot affect re-entry.
+- Added portable source, ordering, guidance, and completed-plan contracts.
+
+## Verification Completed
+
+- All four Make gates passed from the repository root and an external directory.
+- Seven isolated hostile mutations were rejected across request retention,
+  cancellation, disappearance ordering, callback identity, guidance, and plan
+  completion evidence.
+- Exact seven-path diff, project-file drift, generated-artifact, mode,
+  credential-pattern, conflict-marker, and whitespace audits passed.
+- Xcode is unavailable on Linux; no simulator, device, Digits session, backend
+  request, cancellation callback, or UI lifecycle behavior was executed locally.

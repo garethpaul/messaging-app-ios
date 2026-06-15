@@ -10,6 +10,7 @@ class WaitingViewController: UIViewController {
     private var hasMatched = false
     private var isWaitingViewActive = false
     private var waitingViewGeneration = 0
+    private var waitingRequest: Request?
 
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
@@ -22,6 +23,8 @@ class WaitingViewController: UIViewController {
         super.viewWillDisappear(animated)
         isWaitingViewActive = false
         waitingViewGeneration += 1
+        waitingRequest?.cancel()
+        waitingRequest = nil
         finishWaitingCheck()
     }
 
@@ -57,11 +60,18 @@ class WaitingViewController: UIViewController {
                     return
             }
 
-            Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber]).responseJSON { (req, res, json, error) in
+            let request = Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber])
+            self.waitingRequest = request
+            request.responseJSON { (req, res, json, error) in
+                guard self.waitingRequest === request else {
+                    return
+                }
+
                 guard self.isWaitingViewActive && checkGeneration == self.waitingViewGeneration else {
                     return
                 }
 
+                self.waitingRequest = nil
                 self.finishWaitingCheck()
                 guard error == nil, let jsonValue = json else {
                     return

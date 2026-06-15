@@ -64,6 +64,8 @@ Helpful reports include:
   after the same controller disappears and becomes active again.
 - The waiting active check entry guard should reject inactive check starts
   before request state, loading UI, or delayed work changes.
+- Waiting request cancellation should cancel retained transport on controller
+  disappearance and identity-bind callback cleanup before current-state changes.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
 
