@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-15
+
+- Added a waiting concurrent check guard to prevent overlapping delayed match
+  requests and repeated navigation after a successful response.
+
 ## 2026-06-14
 
 - Added a waiting session and response guard before match requests and JSON

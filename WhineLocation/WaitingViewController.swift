@@ -6,6 +6,9 @@ import DigitsKit
 class WaitingViewController: UIViewController {
     @IBOutlet var spinner: UIActivityIndicatorView!
     @IBOutlet var waitingText: UIImageView!
+    private var isChecking = false
+    private var hasMatched = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         check()
@@ -21,7 +24,11 @@ class WaitingViewController: UIViewController {
     }
 
     func check(){
-        //
+        guard !isChecking && !hasMatched else {
+            return
+        }
+
+        isChecking = true
         self.spinner.hidden = false
         self.waitingText.hidden = true
 
@@ -43,6 +50,7 @@ class WaitingViewController: UIViewController {
                 var responseJSON = JSON(jsonValue)
                 if responseJSON["match"].string == "True" {
                     // there is now a match
+                    self.hasMatched = true
                     self.performSegueWithIdentifier("NavigationViewController", sender: self)
                 }
             }
@@ -50,6 +58,7 @@ class WaitingViewController: UIViewController {
     }
 
     private func finishWaitingCheck() {
+        self.isChecking = false
         self.spinner.hidden = true
         self.waitingText.hidden = false
     }

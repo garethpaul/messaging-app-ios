@@ -1,6 +1,6 @@
 # Waiting Concurrent Check Guard
 
-Status: in progress
+Status: completed
 
 ## Problem
 
@@ -46,8 +46,22 @@ match segue.
 
 ## Work Completed
 
-- Pending implementation.
+- Added in-flight and terminal-match state to the waiting controller.
+- Rejected refreshes before loading UI mutation when a check is already pending
+  or a successful match has begun navigation.
+- Released in-flight state through the existing completion helper and marked a
+  successful match before performing the segue.
+- Added ordering-sensitive static contracts and maintenance guidance.
 
 ## Verification Completed
 
-- Pending validation.
+- All four Make gates passed from the checkout, and the canonical check passed
+  from an external directory through the absolute Makefile path.
+- Six isolated hostile mutations were rejected: missing in-flight guard,
+  missing terminal-match guard, matched state after navigation, missing
+  in-flight release, missing maintenance guidance, and stale plan status.
+- Checker compilation and `git diff --check` passed. Exact intended-path,
+  generated-artifact, secret-pattern, conflict-marker, binary, and large-file
+  audits found no issues.
+- `xcodebuild` is unavailable on this Linux host, so no simulator, device,
+  Digits session, backend response, or UI lifecycle execution is claimed.
