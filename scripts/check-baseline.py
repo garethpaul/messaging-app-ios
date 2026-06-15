@@ -114,6 +114,7 @@ def main():
         "docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md",
         "docs/plans/2026-06-14-waiting-session-response-guard.md",
         "docs/plans/2026-06-15-waiting-concurrent-check-guard.md",
+        "docs/plans/2026-06-15-waiting-view-activity-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -195,6 +196,7 @@ def main():
     pulse_timer_plan = read("docs/plans/2026-06-14-pulse-refresh-timer-lifecycle.md")
     waiting_guard_plan = read("docs/plans/2026-06-14-waiting-session-response-guard.md")
     waiting_concurrent_plan = read("docs/plans/2026-06-15-waiting-concurrent-check-guard.md")
+    waiting_activity_plan = read("docs/plans/2026-06-15-waiting-view-activity-guard.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -328,6 +330,7 @@ def main():
     waiting_parse_index = waiting_check.find("var responseJSON = JSON(jsonValue)")
     waiting_matched_index = waiting_check.find("self.hasMatched = true")
     waiting_segue_index = waiting_check.find('self.performSegueWithIdentifier("NavigationViewController", sender: self)')
+    waiting_activity_guards = waiting_check.count("guard self.isWaitingViewActive else")
     require("private var isChecking = false" in waiting and
             "private var hasMatched = false" in waiting and
             0 <= waiting_guard_index < waiting_start_index < waiting_loading_index,
@@ -352,6 +355,22 @@ def main():
             failures)
     require(0 <= waiting_matched_index < waiting_segue_index,
             "Waiting match checks must mark terminal match state before navigation",
+            failures)
+    waiting_appear_start = waiting.find("override func viewWillAppear")
+    waiting_disappear_start = waiting.find("override func viewWillDisappear")
+    waiting_appear_body = waiting[waiting_appear_start:waiting_disappear_start]
+    waiting_disappear_end = waiting.find("\n    @IBAction func refreshBtnClick", waiting_disappear_start)
+    waiting_disappear_body = waiting[waiting_disappear_start:waiting_disappear_end]
+    require("private var isWaitingViewActive = false" in waiting and
+            "isWaitingViewActive = true" in waiting_appear_body and
+            "isWaitingViewActive = false" in waiting_disappear_body and
+            "finishWaitingCheck()" in waiting_disappear_body,
+            "WaitingViewController must track visible lifecycle and release retry state",
+            failures)
+    require(waiting_activity_guards == 2 and
+            waiting_check.find("guard self.isWaitingViewActive else") < waiting_session_index and
+            waiting_check.rfind("guard self.isWaitingViewActive else") < waiting_response_finish_index,
+            "Waiting checks must gate delayed requests and responses on active view state",
             failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
@@ -424,6 +443,13 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_concurrent_plan, "Verification Completed")),
             "waiting concurrent check guard plan must record completed verification",
             failures)
+    require("Status: completed" in waiting_activity_plan and
+            "All four Make gates passed" in waiting_activity_plan and
+            "Six isolated hostile mutations were rejected" in waiting_activity_plan and
+            "external directory" in waiting_activity_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_activity_plan, "Verification Completed")),
+            "waiting view activity guard plan must record completed verification",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -493,6 +519,9 @@ def main():
         require("waiting concurrent check guard" in content.lower(),
                 f"{path} must document the waiting concurrent check guard",
                 failures)
+        require("waiting view activity guard" in content.lower(),
+                f"{path} must document the waiting view activity guard",
+                failures)
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
@@ -528,6 +557,9 @@ def main():
             failures)
     require("waiting concurrent check guard" in changes.lower(),
             "CHANGES must record waiting concurrent check guard hardening",
+            failures)
+    require("waiting view activity guard" in changes.lower(),
+            "CHANGES must record waiting view activity guard hardening",
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",

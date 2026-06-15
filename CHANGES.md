@@ -4,6 +4,8 @@
 
 - Added a waiting concurrent check guard to prevent overlapping delayed match
   requests and repeated navigation after a successful response.
+- Added a waiting view activity guard so delayed work and responses become inert
+  after the controller leaves the screen.
 
 ## 2026-06-14
 

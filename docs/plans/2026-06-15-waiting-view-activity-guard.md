@@ -1,6 +1,6 @@
 # Waiting View Activity Guard
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -46,3 +46,25 @@ controller, while a delayed block can start a request the user no longer needs.
 - In-flight network work is not cancelled at the transport layer; its callback
   is made inert after disappearance.
 - The stacked base pull request must remain available and merge first.
+
+## Work Completed
+
+- Added explicit waiting-view activity state driven by `viewWillAppear` and
+  `viewWillDisappear`.
+- Released loading and retry state when the controller disappears.
+- Guarded both the delayed request boundary and backend response boundary so
+  off-screen work cannot request, mutate match state, update UI, or navigate.
+- Added dependency-free contracts and project guidance for the lifecycle rule.
+
+## Verification Completed
+
+- All four Make gates passed from the repository and the canonical check passed
+  from an external directory through the absolute Makefile path.
+- The baseline checker compiled and passed; local Linux reported the existing
+  `xcodebuild` limitation and completed the static iOS baseline.
+- Six isolated hostile mutations were rejected: missing appearance state,
+  missing delayed-work gating, missing response gating, missing retry release,
+  missing guidance, and stale plan status.
+- `git diff --check`, exact intended-path, generated-artifact, credential-pattern,
+  project-file integrity, conflict-marker, binary, and large-file audits passed.
+- No live Digits, backend, location, or messaging service was contacted.

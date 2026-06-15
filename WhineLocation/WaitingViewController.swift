@@ -8,10 +8,22 @@ class WaitingViewController: UIViewController {
     @IBOutlet var waitingText: UIImageView!
     private var isChecking = false
     private var hasMatched = false
+    private var isWaitingViewActive = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         check()
+    }
+
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        isWaitingViewActive = true
+    }
+
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        isWaitingViewActive = false
+        finishWaitingCheck()
     }
 
     @IBAction func refreshBtnClick(sender: AnyObject) {
@@ -35,6 +47,11 @@ class WaitingViewController: UIViewController {
         let delayTime = dispatch_time(DISPATCH_TIME_NOW,
             Int64(2 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
+            guard self.isWaitingViewActive else {
+                self.isChecking = false
+                return
+            }
+
             guard let digitsSession = Digits.sharedInstance().session(),
                 let userId = normalizedDigitsUserID(digitsSession.userID) else {
                     self.finishWaitingCheck()
@@ -42,6 +59,11 @@ class WaitingViewController: UIViewController {
             }
 
             Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber]).responseJSON { (req, res, json, error) in
+                guard self.isWaitingViewActive else {
+                    self.isChecking = false
+                    return
+                }
+
                 self.finishWaitingCheck()
                 guard error == nil, let jsonValue = json else {
                     return

@@ -58,6 +58,8 @@ Helpful reports include:
   session and guarded response JSON before parsing match state.
 - The waiting concurrent check guard should prevent overlapping match requests
   and repeated successful navigation.
+- The waiting view activity guard should prevent off-screen match requests,
+  state mutation, and navigation after the controller disappears.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
 
