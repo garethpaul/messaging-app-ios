@@ -85,6 +85,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   requesting or navigating after the controller leaves the screen.
 - The waiting appearance generation guard starts a fresh automatic check for
   each appearance and permanently rejects callbacks from an earlier appearance.
+- The waiting active check entry guard rejects off-screen check starts before
+  request state or loading UI can change.
 - The home time submission guard requires a normalized Digits user ID and only
   opens the next screen after a successful Alamofire response.
 
@@ -131,6 +133,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   inert after the waiting controller disappears.
 - The waiting appearance generation guard should bind every delayed request and
   response to the controller appearance that started it.
+- The waiting active check entry guard should keep inactive callers from
+  stranding the one-request state before the next appearance.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 - The home time submission guard should keep home-time POSTs behind normalized
   Digits session IDs and successful backend responses.

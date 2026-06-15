@@ -8,6 +8,8 @@
   after the controller leaves the screen.
 - Added a waiting appearance generation guard so a callback from an earlier
   appearance cannot mutate state or navigate after controller re-entry.
+- Added a waiting active check entry guard so off-screen callers cannot strand
+  request state or suppress the next appearance's automatic check.
 
 ## 2026-06-14
 

@@ -1,6 +1,6 @@
 # Waiting Active Check Entry Guard
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -31,3 +31,25 @@ therefore skip its automatic check indefinitely.
 
 - Do not cancel transport work or change the backend request contract.
 - Do not merge or close stacked pull requests without owner authorization.
+
+## Work Completed
+
+- Added the active-view predicate to the first `check()` guard before
+  `isChecking`, appearance-generation capture, and loading UI mutation.
+- Preserved the existing concurrent, matched, session, generation, response,
+  and navigation boundaries.
+- Extended dependency-free baseline contracts and maintained guidance for the
+  active-entry ordering.
+
+## Verification Completed
+
+- All four Make gates passed from the repository and the canonical check passed
+  from an external directory.
+- The baseline checker compiled and passed; Linux reported the existing
+  `xcodebuild` limitation without claiming executable iOS behavior.
+- Five isolated hostile mutations were rejected for inactive-entry removal,
+  guard reordering, source-contract weakening, missing guidance, and stale plan
+  status.
+- Exact diff, generated-artifact, project-integrity, binary, file-mode,
+  conflict-marker, and credential-shaped addition audits passed.
+- No live Digits, backend, location, or messaging service was contacted.

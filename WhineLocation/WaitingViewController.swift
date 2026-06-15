@@ -35,7 +35,7 @@ class WaitingViewController: UIViewController {
     }
 
     func check(){
-        guard !isChecking && !hasMatched else {
+        guard isWaitingViewActive && !isChecking && !hasMatched else {
             return
         }
 

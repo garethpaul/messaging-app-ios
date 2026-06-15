@@ -62,6 +62,8 @@ Helpful reports include:
   state mutation, and navigation after the controller disappears.
 - The waiting appearance generation guard should reject stale match callbacks
   after the same controller disappears and becomes active again.
+- The waiting active check entry guard should reject inactive check starts
+  before request state, loading UI, or delayed work changes.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
 

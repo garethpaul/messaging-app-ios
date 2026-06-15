@@ -115,6 +115,8 @@ def main():
         "docs/plans/2026-06-14-waiting-session-response-guard.md",
         "docs/plans/2026-06-15-waiting-concurrent-check-guard.md",
         "docs/plans/2026-06-15-waiting-view-activity-guard.md",
+        "docs/plans/2026-06-15-waiting-appearance-generation-guard.md",
+        "docs/plans/2026-06-15-waiting-active-check-entry.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -198,6 +200,7 @@ def main():
     waiting_concurrent_plan = read("docs/plans/2026-06-15-waiting-concurrent-check-guard.md")
     waiting_activity_plan = read("docs/plans/2026-06-15-waiting-view-activity-guard.md")
     waiting_generation_plan = read("docs/plans/2026-06-15-waiting-appearance-generation-guard.md")
+    waiting_active_entry_plan = read("docs/plans/2026-06-15-waiting-active-check-entry.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -319,7 +322,8 @@ def main():
     ]:
         require("println(" not in source, f"{path} must not log message, phone, or network data", failures)
     waiting_check = waiting.split("func check()", 1)[1].split("private func finishWaitingCheck", 1)[0]
-    waiting_guard_index = waiting_check.find("guard !isChecking && !hasMatched else")
+    waiting_entry_guard = "guard isWaitingViewActive && !isChecking && !hasMatched else"
+    waiting_guard_index = waiting_check.find(waiting_entry_guard)
     waiting_start_index = waiting_check.find("isChecking = true")
     waiting_generation_capture_index = waiting_check.find("let checkGeneration = waitingViewGeneration")
     waiting_loading_index = waiting_check.find("self.spinner.hidden = false")
@@ -342,6 +346,11 @@ def main():
             "private var hasMatched = false" in waiting and
             0 <= waiting_guard_index < waiting_start_index < waiting_generation_capture_index < waiting_loading_index,
             "Waiting match checks must reject overlapping and post-match refreshes before loading starts",
+            failures)
+    require(waiting_check.count(waiting_entry_guard) == 1 and
+            waiting_guard_index < waiting_start_index and
+            waiting_guard_index < waiting_loading_index,
+            "Waiting checks must reject inactive entry before request or UI state mutation",
             failures)
     require(0 <= waiting_session_index < waiting_normalized_user_index < waiting_request_index and
             '"userId": userId' in waiting_check and
@@ -471,6 +480,13 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_generation_plan, "Verification Completed")),
             "waiting appearance generation guard plan must record completed verification",
             failures)
+    require("Status: completed" in waiting_active_entry_plan and
+            "All four Make gates passed" in waiting_active_entry_plan and
+            "Five isolated hostile mutations were rejected" in waiting_active_entry_plan and
+            "external directory" in waiting_active_entry_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_active_entry_plan, "Verification Completed")),
+            "waiting active check entry guard plan must record completed verification",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -546,6 +562,9 @@ def main():
         require("waiting appearance generation guard" in content.lower(),
                 f"{path} must document the waiting appearance generation guard",
                 failures)
+        require("waiting active check entry guard" in content.lower(),
+                f"{path} must document the waiting active check entry guard",
+                failures)
         require("home time submission guard" in content.lower(),
                 f"{path} must document home time submission guard",
                 failures)
@@ -587,6 +606,9 @@ def main():
             failures)
     require("waiting appearance generation guard" in changes.lower(),
             "CHANGES must record waiting appearance generation guard hardening",
+            failures)
+    require("waiting active check entry guard" in changes.lower(),
+            "CHANGES must record waiting active check entry guard hardening",
             failures)
     require("home time submission guard" in changes.lower(),
             "CHANGES must record home time submission guard",
