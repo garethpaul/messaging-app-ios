@@ -1,6 +1,6 @@
 # Pulse Row Integrity
 
-Status: planned
+Status: completed
 
 ## Priority
 
@@ -64,3 +64,18 @@ index exists in all of them.
 - Live table arrays remain aligned and are replaced together only after parsing
   finishes.
 - Existing pulse and waiting lifecycle contracts remain intact.
+
+## Verification Completed
+
+- All four Make gates passed from the repository root on Linux.
+- The absolute Makefile `check` gate passed from an external directory.
+- The Python baseline checker compiled with bytecode redirected outside the
+  repository.
+- Eight isolated hostile mutations were rejected across complete-field parsing,
+  local accumulation, publication ordering, refresh completion, maintained
+  guidance, changelog evidence, and plan completion status.
+- `git diff --check`, explicit generated-artifact inspection, tracked secret
+  scanning, and the intended-file review passed.
+- Xcode is unavailable on Linux, so native UIKit, Alamofire, and backend behavior
+  remains delegated to the pinned hosted macOS baseline for the exact pushed
+  head; no local native build or runtime execution is claimed.

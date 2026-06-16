@@ -118,6 +118,7 @@ def main():
         "docs/plans/2026-06-15-waiting-appearance-generation-guard.md",
         "docs/plans/2026-06-15-waiting-active-check-entry.md",
         "docs/plans/2026-06-15-waiting-request-cancellation.md",
+        "docs/plans/2026-06-16-pulse-row-integrity.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -203,6 +204,7 @@ def main():
     waiting_generation_plan = read("docs/plans/2026-06-15-waiting-appearance-generation-guard.md")
     waiting_active_entry_plan = read("docs/plans/2026-06-15-waiting-active-check-entry.md")
     waiting_request_cancellation_plan = read("docs/plans/2026-06-15-waiting-request-cancellation.md")
+    pulse_row_integrity_plan = read("docs/plans/2026-06-16-pulse-row-integrity.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -420,11 +422,33 @@ def main():
             "JSON(json!)" not in get_data_method,
             "Pulse list refresh must guard missing JSON before parsing messages",
             failures)
-    require("dataId.removeAll" in get_data_method and
-            "dataRead.removeAll" in get_data_method and
+    pulse_row_fields = ["dataType", "dataInfo", "dataDate", "dataId", "dataRead"]
+    pulse_row_sources = ["dataType", "dataInfo", "date", "rndId", "isRead"]
+    require(all(f"var next{field[0].upper() + field[1:]}: [String] = []" in get_data_method
+                for field in pulse_row_fields) and
+            all(f'let {field} = subJson["{source}"].string' in get_data_method
+                for field, source in zip(pulse_row_fields, pulse_row_sources)) and
+            "else {\n                            continue\n                    }" in get_data_method and
+            all(f"next{field[0].upper() + field[1:]}.append({field})" in get_data_method
+                for field in pulse_row_fields) and
+            all(f"self.{field}.append" not in get_data_method for field in pulse_row_fields),
+            "Pulse list refresh must accept only complete rows into local replacement arrays",
+            failures)
+    pulse_publish = get_data_method.split("dispatch_async(dispatch_get_main_queue()", 1)[-1]
+    pulse_assignment_indexes = [
+        pulse_publish.find(f"self.{field} = next{field[0].upper() + field[1:]}")
+        for field in pulse_row_fields
+    ]
+    pulse_reload_index = pulse_publish.find("self.tableView.reloadData()")
+    pulse_compare_index = pulse_publish.find("compareRead(self.dataId)")
+    pulse_refresh_end_index = pulse_publish.find("self.endRefreshingIfNeeded()")
+    require("dispatch_async(dispatch_get_main_queue()" in get_data_method and
+            all(index >= 0 for index in pulse_assignment_indexes) and
+            max(pulse_assignment_indexes) < pulse_reload_index < pulse_compare_index < pulse_refresh_end_index and
+            all(f"{field}.removeAll" not in get_data_method for field in pulse_row_fields) and
             "func endRefreshingIfNeeded()" in pulse and
             "refreshControl?.endRefreshing()" in pulse,
-            "Pulse list refresh must clear read-state arrays and end refreshes safely",
+            "Pulse list refresh must publish aligned rows before reload, read-state comparison, and refresh completion",
             failures)
     require("if sendAvailable {" in send_msg_method and
             "sendAvailable = false" in send_msg_method and
@@ -508,6 +532,14 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(waiting_request_cancellation_plan, "Verification Completed")),
             "waiting request cancellation plan must record completed verification",
             failures)
+    require("Status: completed" in pulse_row_integrity_plan and
+            "All four Make gates passed" in pulse_row_integrity_plan and
+            "Eight isolated hostile mutations were rejected" in pulse_row_integrity_plan and
+            "external directory" in pulse_row_integrity_plan and
+            "Xcode is unavailable on Linux" in pulse_row_integrity_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_row_integrity_plan, "Verification Completed")),
+            "pulse row integrity plan must record completed verification",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -571,6 +603,9 @@ def main():
         require("pulse list user guard" in content.lower(),
                 f"{path} must document pulse list user guard",
                 failures)
+        require("pulse row integrity" in content.lower(),
+                f"{path} must document pulse row integrity",
+                failures)
         require("waiting session and response guard" in content.lower(),
                 f"{path} must document the waiting session and response guard",
                 failures)
@@ -618,6 +653,9 @@ def main():
             failures)
     require("pulse list user guard" in changes.lower(),
             "CHANGES must record pulse list user guard",
+            failures)
+    require("pulse row integrity" in changes.lower(),
+            "CHANGES must record pulse row integrity",
             failures)
     require("waiting session and response guard" in changes.lower(),
             "CHANGES must record waiting session and response guard hardening",

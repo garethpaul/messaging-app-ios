@@ -45,13 +45,6 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
             return
         }
 
-        // clear data
-        dataDate.removeAll(keepCapacity: false)
-        dataInfo.removeAll(keepCapacity: false)
-        dataType.removeAll(keepCapacity: false)
-        dataId.removeAll(keepCapacity: false)
-        dataRead.removeAll(keepCapacity: false)
-        
         Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId]).responseJSON { (req, res, json, error) in
             if (error != nil) {
                 self.endRefreshingIfNeeded()
@@ -62,37 +55,39 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 }
 
                 var json = JSON(jsonValue)
+                var nextDataType: [String] = []
+                var nextDataInfo: [String] = []
+                var nextDataDate: [String] = []
+                var nextDataId: [String] = []
+                var nextDataRead: [String] = []
 
                 for (index: String, subJson: JSON) in json {
-                    //Do something you want
-
-                    if let _dataType = subJson["dataType"].string {
-                        self.dataType.append(_dataType)
+                    guard let dataType = subJson["dataType"].string,
+                        let dataInfo = subJson["dataInfo"].string,
+                        let dataDate = subJson["date"].string,
+                        let dataId = subJson["rndId"].string,
+                        let dataRead = subJson["isRead"].string else {
+                            continue
                     }
 
-                    if let _dataInfo = subJson["dataInfo"].string {
-                        self.dataInfo.append(_dataInfo)
-                    }
-
-                    if let _dataDate = subJson["date"].string {
-                        self.dataDate.append(_dataDate)
-                    }
-
-                    if let _dataId = subJson["rndId"].string {
-                        self.dataId.append(_dataId)
-                    }
-
-                    if let _dataRead = subJson["isRead"].string {
-                        self.dataRead.append(_dataRead)
-                    }
+                    nextDataType.append(dataType)
+                    nextDataInfo.append(dataInfo)
+                    nextDataDate.append(dataDate)
+                    nextDataId.append(dataId)
+                    nextDataRead.append(dataRead)
                 }
 
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    self.dataType = nextDataType
+                    self.dataInfo = nextDataInfo
+                    self.dataDate = nextDataDate
+                    self.dataId = nextDataId
+                    self.dataRead = nextDataRead
                     self.tableView.reloadData()
                     
                     compareRead(self.dataId)
+                    self.endRefreshingIfNeeded()
                 })
-                self.endRefreshingIfNeeded()
 
             }
         }

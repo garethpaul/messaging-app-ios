@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-16
+
+- Added pulse row integrity so incomplete backend records are skipped and all
+  table and read-state arrays are replaced together before reload.
+
 ## 2026-06-15
 
 - Added waiting request cancellation so obsolete Alamofire transport is stopped

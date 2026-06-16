@@ -54,6 +54,8 @@ Helpful reports include:
   so navigation cannot accumulate background refresh requests.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
+- Pulse row integrity should reject records missing any rendered or read-state
+  field and publish aligned replacement arrays before table reload.
 - The waiting session and response guard should require one normalized Digits
   session and guarded response JSON before parsing match state.
 - The waiting concurrent check guard should prevent overlapping match requests

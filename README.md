@@ -77,6 +77,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   when the screen disappears so navigation cannot accumulate refresh loops.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
+- Pulse row integrity keeps the five table and read-state fields aligned by
+  admitting complete records only and publishing replacement arrays together.
 - The waiting session and response guard skips match checks without one
   normalized Digits session and guards missing JSON before parsing.
 - The waiting concurrent check guard prevents overlapping refresh requests and
@@ -127,6 +129,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   state while a send refresh is pending.
 - The pulse list user guard should keep message list refreshes behind
   normalized Digits user IDs and guarded response JSON.
+- Pulse row integrity should keep partial backend records out of live table
+  state and replace every parallel row array before reloading.
 - The waiting session and response guard should keep match requests behind one
   normalized Digits session and complete loading state from the response path.
 - The waiting concurrent check guard should keep only one match check in flight

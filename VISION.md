@@ -36,6 +36,7 @@ Priority:
 - Keep the pulse send session guard before request, throttle, and UI mutation
 - Keep one pulse refresh timer scoped to the visible controller lifecycle
 - Keep the pulse list user guard before refreshing message list state
+- Keep pulse row integrity across every rendered and read-state field
 - Keep the waiting session and response guard before match requests and parsing
 - Keep the waiting concurrent check guard around delayed requests and navigation
 - Keep the waiting view activity guard around delayed work and response handling
@@ -92,6 +93,8 @@ The pulse send throttle should keep repeat taps from posting duplicate messages
 while the message list refresh is pending.
 The pulse list user guard should keep message list refreshes tied to normalized
 Digits session identities and guarded response JSON.
+Pulse row integrity should keep partial records out of live table state and
+publish every replacement array before reloading rows.
 The home time submission guard should keep home-time updates tied to normalized
 Digits identities and only navigate after successful Alamofire responses.
 
