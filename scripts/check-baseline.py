@@ -119,6 +119,7 @@ def main():
         "docs/plans/2026-06-15-waiting-active-check-entry.md",
         "docs/plans/2026-06-15-waiting-request-cancellation.md",
         "docs/plans/2026-06-16-pulse-row-integrity.md",
+        "docs/plans/2026-06-16-pulse-request-ownership.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -205,6 +206,7 @@ def main():
     waiting_active_entry_plan = read("docs/plans/2026-06-15-waiting-active-check-entry.md")
     waiting_request_cancellation_plan = read("docs/plans/2026-06-15-waiting-request-cancellation.md")
     pulse_row_integrity_plan = read("docs/plans/2026-06-16-pulse-row-integrity.md")
+    pulse_request_ownership_plan = read("docs/plans/2026-06-16-pulse-request-ownership.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -412,6 +414,21 @@ def main():
             failures)
     send_msg_method = pulse.split("@IBAction func sendMsg", 1)[1].split("func refresh", 1)[0]
     get_data_method = pulse.split("func getData()", 1)[1].split("// move bar up", 1)[0]
+    pulse_cancel_index = get_data_method.find("pulseRequest?.cancel()")
+    pulse_initial_clear_index = get_data_method.find("pulseRequest = nil")
+    pulse_user_guard_index = get_data_method.find("guard let userId = currentDigitsUserID() else")
+    pulse_request_index = get_data_method.find('let request = Alamofire.request(.POST, getInfo("pulseListUrl")')
+    pulse_retain_index = get_data_method.find("pulseRequest = request")
+    pulse_response_index = get_data_method.find("request.responseJSON")
+    pulse_identity_index = get_data_method.find("guard self.pulseRequest === request else")
+    pulse_callback_clear_index = get_data_method.find("self.pulseRequest = nil", pulse_identity_index)
+    pulse_error_index = get_data_method.find("if (error != nil)")
+    require("private var pulseRequest: Request?" in pulse and
+            get_data_method.count("pulseRequest?.cancel()") == 1 and
+            get_data_method.count("pulseRequest = nil") == 2 and
+            0 <= pulse_cancel_index < pulse_initial_clear_index < pulse_user_guard_index < pulse_request_index < pulse_retain_index < pulse_response_index < pulse_identity_index < pulse_callback_clear_index < pulse_error_index,
+            "Pulse list transport must cancel replacements and identity-bind callbacks before state mutation",
+            failures)
     require("guard let userId = currentDigitsUserID() else" in get_data_method and
             'parameters: ["userId": userId]' in get_data_method and
             "session().userID" not in get_data_method,
@@ -540,6 +557,14 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_row_integrity_plan, "Verification Completed")),
             "pulse row integrity plan must record completed verification",
             failures)
+    require("Status: completed" in pulse_request_ownership_plan and
+            "All four Make gates passed" in pulse_request_ownership_plan and
+            "Six isolated hostile mutations were rejected" in pulse_request_ownership_plan and
+            "external directory" in pulse_request_ownership_plan and
+            "Xcode is unavailable on Linux" in pulse_request_ownership_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_request_ownership_plan, "Verification Completed")),
+            "pulse request ownership plan must record completed verification",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -552,11 +577,24 @@ def main():
             disappear_body.find("refreshTimer = nil") > disappear_body.find("refreshTimer?.invalidate()"),
             "PulseViewController must own and invalidate its repeating refresh timer",
             failures)
+    pulse_disappear_cancel_index = disappear_body.find("pulseRequest?.cancel()")
+    pulse_disappear_clear_index = disappear_body.find("pulseRequest = nil")
+    require(pulse.count("pulseRequest?.cancel()") == 2 and
+            pulse.count("pulseRequest = nil") == 3 and
+            0 <= pulse_disappear_cancel_index < pulse_disappear_clear_index,
+            "PulseViewController must cancel and clear its retained request on disappearance",
+            failures)
     require("pulse refresh timer" in readme.lower() and
             "pulse refresh timer" in vision.lower() and
             "pulse refresh timer" in security.lower() and
             "pulse refresh timer" in changes.lower(),
             "project guidance must document pulse refresh timer lifecycle",
+            failures)
+    require("pulse request ownership" in readme.lower() and
+            "pulse request ownership" in vision.lower() and
+            "pulse request ownership" in security.lower() and
+            "pulse request ownership" in changes.lower(),
+            "project guidance must document pulse request ownership",
             failures)
     require("Status: completed" in pulse_timer_plan and
             "Five isolated hostile mutations were rejected" in pulse_timer_plan and
@@ -605,6 +643,9 @@ def main():
                 failures)
         require("pulse row integrity" in content.lower(),
                 f"{path} must document pulse row integrity",
+                failures)
+        require("pulse request ownership" in content.lower(),
+                f"{path} must document pulse request ownership",
                 failures)
         require("waiting session and response guard" in content.lower(),
                 f"{path} must document the waiting session and response guard",
@@ -656,6 +697,9 @@ def main():
             failures)
     require("pulse row integrity" in changes.lower(),
             "CHANGES must record pulse row integrity",
+            failures)
+    require("pulse request ownership" in changes.lower(),
+            "CHANGES must record pulse request ownership",
             failures)
     require("waiting session and response guard" in changes.lower(),
             "CHANGES must record waiting session and response guard hardening",

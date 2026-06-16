@@ -75,6 +75,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   when the Digits session or normalized user ID is unavailable.
 - The pulse refresh timer is owned by the visible controller and invalidated
   when the screen disappears so navigation cannot accumulate refresh loops.
+- Pulse request ownership cancels replaced and disappearing list loads, and
+  only the exact retained request may replace the current pulse snapshot.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
 - Pulse row integrity keeps the five table and read-state fields aligned by

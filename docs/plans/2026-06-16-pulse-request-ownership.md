@@ -1,6 +1,6 @@
 # Pulse Request Ownership
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -29,12 +29,14 @@ also continue after the view disappears.
 - `CHANGES.md`
 - `docs/plans/2026-06-16-pulse-request-ownership.md`
 
-## Verification Planned
+## Verification Completed
 
-- Run the focused baseline checker and all four Make gates from the repository
-  root and an external directory.
-- Run isolated hostile mutations for request retention, replacement
-  cancellation, disappearance cancellation, response identity, ownership
-  clearing, and completed plan evidence.
-- Run `git diff --check` plus explicit artifact and changed-line secret audits.
-- Record the Linux Xcode limitation without claiming simulator execution.
+- The focused baseline checker passed. All four Make gates passed from the
+  repository root and an external directory.
+- Six isolated hostile mutations were rejected for request retention,
+  replacement cancellation, disappearance cancellation, response identity,
+  ownership clearing, and completed plan evidence.
+- `git diff --check` and explicit artifact and changed-line secret audits
+  passed.
+- Xcode is unavailable on Linux, so simulator execution could not be
+  performed.

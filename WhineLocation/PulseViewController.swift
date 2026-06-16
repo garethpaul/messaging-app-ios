@@ -38,14 +38,25 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
     var dataId: [String] = []
     var dataRead: [String] = []
     var sendAvailable = true
+    private var pulseRequest: Request?
 
     func getData() {
+        pulseRequest?.cancel()
+        pulseRequest = nil
+
         guard let userId = currentDigitsUserID() else {
             endRefreshingIfNeeded()
             return
         }
 
-        Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId]).responseJSON { (req, res, json, error) in
+        let request = Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId])
+        pulseRequest = request
+        request.responseJSON { (req, res, json, error) in
+            guard self.pulseRequest === request else {
+                return
+            }
+
+            self.pulseRequest = nil
             if (error != nil) {
                 self.endRefreshingIfNeeded()
             } else {
@@ -142,6 +153,8 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         NSNotificationCenter.defaultCenter().removeObserver(self)
         refreshTimer?.invalidate()
         refreshTimer = nil
+        pulseRequest?.cancel()
+        pulseRequest = nil
     }
 
     func keyboardWillShow(notification: NSNotification) {

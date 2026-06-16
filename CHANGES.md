@@ -2,6 +2,8 @@
 
 ## 2026-06-16
 
+- Added pulse request ownership so replaced and disappearing list loads are
+  canceled and stale callbacks cannot overwrite newer pulse snapshots.
 - Added pulse row integrity so incomplete backend records are skipped and all
   table and read-state arrays are replaced together before reload.
 

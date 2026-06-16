@@ -52,6 +52,8 @@ Helpful reports include:
   normalized user ID before request, throttle, text, or button mutations.
 - The pulse refresh timer should be invalidated when the controller disappears
   so navigation cannot accumulate background refresh requests.
+- Pulse request ownership should reject callbacks from replaced or canceled
+  list requests before they can mutate pulse rows or read-state arrays.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
 - Pulse row integrity should reject records missing any rendered or read-state
