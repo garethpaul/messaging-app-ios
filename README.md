@@ -77,6 +77,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   when the screen disappears so navigation cannot accumulate refresh loops.
 - Pulse request ownership cancels replaced and disappearing list loads, and
   only the exact retained request may replace the current pulse snapshot.
+- Pulse publication ownership revalidates the exact retained request on the
+  main queue before a successful snapshot can mutate table or read-state data.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
 - Pulse row integrity keeps the five table and read-state fields aligned by

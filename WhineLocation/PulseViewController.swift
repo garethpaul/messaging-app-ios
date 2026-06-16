@@ -56,12 +56,11 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 return
             }
 
-            self.pulseRequest = nil
             if (error != nil) {
-                self.endRefreshingIfNeeded()
+                self.finishPulseRequest(request)
             } else {
                 guard let jsonValue = json else {
-                    self.endRefreshingIfNeeded()
+                    self.finishPulseRequest(request)
                     return
                 }
 
@@ -89,6 +88,11 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 }
 
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    guard self.pulseRequest === request else {
+                        return
+                    }
+
+                    self.pulseRequest = nil
                     self.dataType = nextDataType
                     self.dataInfo = nextDataInfo
                     self.dataDate = nextDataDate
@@ -104,6 +108,17 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         }
         
         
+    }
+
+    func finishPulseRequest(request: Request) {
+        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            guard self.pulseRequest === request else {
+                return
+            }
+
+            self.pulseRequest = nil
+            self.endRefreshingIfNeeded()
+        })
     }
 
     func endRefreshingIfNeeded() {

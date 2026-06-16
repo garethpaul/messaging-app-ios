@@ -38,6 +38,7 @@ Priority:
 - Keep the pulse list user guard before refreshing message list state
 - Keep pulse row integrity across every rendered and read-state field
 - Keep pulse request ownership bound to the latest retained list request
+- Keep pulse publication ownership authoritative through main-queue mutation
 - Keep the waiting session and response guard before match requests and parsing
 - Keep the waiting concurrent check guard around delayed requests and navigation
 - Keep the waiting view activity guard around delayed work and response handling

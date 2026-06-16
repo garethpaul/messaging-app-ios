@@ -120,6 +120,7 @@ def main():
         "docs/plans/2026-06-15-waiting-request-cancellation.md",
         "docs/plans/2026-06-16-pulse-row-integrity.md",
         "docs/plans/2026-06-16-pulse-request-ownership.md",
+        "docs/plans/2026-06-16-pulse-publication-ownership.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -207,6 +208,7 @@ def main():
     waiting_request_cancellation_plan = read("docs/plans/2026-06-15-waiting-request-cancellation.md")
     pulse_row_integrity_plan = read("docs/plans/2026-06-16-pulse-row-integrity.md")
     pulse_request_ownership_plan = read("docs/plans/2026-06-16-pulse-request-ownership.md")
+    pulse_publication_ownership_plan = read("docs/plans/2026-06-16-pulse-publication-ownership.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -425,8 +427,8 @@ def main():
     pulse_error_index = get_data_method.find("if (error != nil)")
     require("private var pulseRequest: Request?" in pulse and
             get_data_method.count("pulseRequest?.cancel()") == 1 and
-            get_data_method.count("pulseRequest = nil") == 2 and
-            0 <= pulse_cancel_index < pulse_initial_clear_index < pulse_user_guard_index < pulse_request_index < pulse_retain_index < pulse_response_index < pulse_identity_index < pulse_callback_clear_index < pulse_error_index,
+            get_data_method.count("pulseRequest = nil") == 3 and
+            0 <= pulse_cancel_index < pulse_initial_clear_index < pulse_user_guard_index < pulse_request_index < pulse_retain_index < pulse_response_index < pulse_identity_index < pulse_error_index < pulse_callback_clear_index,
             "Pulse list transport must cancel replacements and identity-bind callbacks before state mutation",
             failures)
     require("guard let userId = currentDigitsUserID() else" in get_data_method and
@@ -565,6 +567,41 @@ def main():
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_request_ownership_plan, "Verification Completed")),
             "pulse request ownership plan must record completed verification",
             failures)
+    require("Status: completed" in pulse_publication_ownership_plan and
+            "All four Make gates passed" in pulse_publication_ownership_plan and
+            "Seven isolated hostile mutations were rejected" in pulse_publication_ownership_plan and
+            "external directory" in pulse_publication_ownership_plan and
+            "Xcode is unavailable on Linux" in pulse_publication_ownership_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_publication_ownership_plan, "Verification Completed")),
+            "pulse publication ownership plan must record completed verification",
+            failures)
+    response_start = pulse.find("request.responseJSON")
+    response_end = pulse.find("\n    func finishPulseRequest", response_start)
+    response_body = pulse[response_start:response_end]
+    row_parse_start = response_body.find("var nextDataType")
+    publication_start = response_body.find("dispatch_async(dispatch_get_main_queue()", row_parse_start)
+    publication_body = response_body[publication_start:]
+    publication_guard = publication_body.find("guard self.pulseRequest === request")
+    publication_clear = publication_body.find("self.pulseRequest = nil")
+    publication_write = publication_body.find("self.dataType = nextDataType")
+    require(response_start >= 0 and response_end > response_start and
+            row_parse_start >= 0 and publication_start > row_parse_start and
+            0 <= publication_guard < publication_clear < publication_write,
+            "pulse success publication must revalidate and clear exact request ownership before row mutation",
+            failures)
+    require("self.pulseRequest = nil" not in response_body[:row_parse_start],
+            "pulse success response must retain request ownership through row parsing",
+            failures)
+    finish_start = pulse.find("func finishPulseRequest(request: Request)")
+    finish_end = pulse.find("\n    func endRefreshingIfNeeded", finish_start)
+    finish_body = pulse[finish_start:finish_end]
+    finish_guard = finish_body.find("guard self.pulseRequest === request")
+    finish_clear = finish_body.find("self.pulseRequest = nil")
+    finish_refresh = finish_body.find("self.endRefreshingIfNeeded()")
+    require(finish_start >= 0 and finish_end > finish_start and
+            0 <= finish_guard < finish_clear < finish_refresh,
+            "pulse failure completion must revalidate and clear exact request ownership before ending refresh",
+            failures)
     appear_start = pulse.find("override func viewWillAppear")
     disappear_start = pulse.find("override func viewWillDisappear")
     appear_body = pulse[appear_start:disappear_start]
@@ -580,7 +617,7 @@ def main():
     pulse_disappear_cancel_index = disappear_body.find("pulseRequest?.cancel()")
     pulse_disappear_clear_index = disappear_body.find("pulseRequest = nil")
     require(pulse.count("pulseRequest?.cancel()") == 2 and
-            pulse.count("pulseRequest = nil") == 3 and
+            pulse.count("pulseRequest = nil") == 4 and
             0 <= pulse_disappear_cancel_index < pulse_disappear_clear_index,
             "PulseViewController must cancel and clear its retained request on disappearance",
             failures)
@@ -595,6 +632,12 @@ def main():
             "pulse request ownership" in security.lower() and
             "pulse request ownership" in changes.lower(),
             "project guidance must document pulse request ownership",
+            failures)
+    require("pulse publication ownership" in readme.lower() and
+            "pulse publication ownership" in vision.lower() and
+            "pulse publication ownership" in security.lower() and
+            "pulse publication ownership" in changes.lower(),
+            "project guidance must document pulse publication ownership",
             failures)
     require("Status: completed" in pulse_timer_plan and
             "Five isolated hostile mutations were rejected" in pulse_timer_plan and
@@ -646,6 +689,9 @@ def main():
                 failures)
         require("pulse request ownership" in content.lower(),
                 f"{path} must document pulse request ownership",
+                failures)
+        require("pulse publication ownership" in content.lower(),
+                f"{path} must document pulse publication ownership",
                 failures)
         require("waiting session and response guard" in content.lower(),
                 f"{path} must document the waiting session and response guard",
@@ -700,6 +746,9 @@ def main():
             failures)
     require("pulse request ownership" in changes.lower(),
             "CHANGES must record pulse request ownership",
+            failures)
+    require("pulse publication ownership" in changes.lower(),
+            "CHANGES must record pulse publication ownership",
             failures)
     require("waiting session and response guard" in changes.lower(),
             "CHANGES must record waiting session and response guard hardening",

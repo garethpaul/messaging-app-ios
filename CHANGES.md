@@ -2,6 +2,8 @@
 
 ## 2026-06-16
 
+- Added pulse publication ownership so a successful snapshot revalidates its
+  exact request on the main queue before mutating table and read-state data.
 - Added pulse request ownership so replaced and disappearing list loads are
   canceled and stale callbacks cannot overwrite newer pulse snapshots.
 - Added pulse row integrity so incomplete backend records are skipped and all

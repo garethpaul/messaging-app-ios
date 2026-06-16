@@ -54,6 +54,8 @@ Helpful reports include:
   so navigation cannot accumulate background refresh requests.
 - Pulse request ownership should reject callbacks from replaced or canceled
   list requests before they can mutate pulse rows or read-state arrays.
+- Pulse publication ownership should revalidate the exact retained request at
+  main-queue publication time so queued stale snapshots remain inert.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
 - Pulse row integrity should reject records missing any rendered or read-state

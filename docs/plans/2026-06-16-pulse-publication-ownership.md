@@ -1,6 +1,6 @@
 # Pulse Publication Ownership
 
-Status: planned
+Status: completed
 
 ## Priority
 
@@ -61,3 +61,15 @@ older snapshot to replace current table state and invoke read comparison.
 - Replacement refreshes and view disappearance make already-queued success
   blocks inert.
 - Existing request cancellation and row-integrity contracts remain intact.
+
+## Verification Completed
+
+- All four Make gates passed from the repository root, and the absolute
+  Makefile `check` gate passed from an external directory.
+- Seven isolated hostile mutations were rejected across success ownership,
+  ownership retention, publication ordering, failure completion, guidance,
+  plan status, and plan evidence.
+- Python checker compilation, `git diff --check`, and explicit artifact and
+  changed-line secret audits passed.
+- Xcode is unavailable on Linux, so native UIKit, Alamofire, simulator, and
+  backend execution could not be performed.
