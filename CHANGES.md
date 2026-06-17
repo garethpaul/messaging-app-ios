@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-17
+
+- Added pulse send request ownership so drafts clear and pulse lists refresh
+  only after the exact retained write succeeds, while failures remain retryable.
+
 ## 2026-06-16
 
 - Added pulse publication ownership so a successful snapshot revalidates its

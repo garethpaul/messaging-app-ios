@@ -1,7 +1,7 @@
 ---
 title: "fix: Bind pulse send UI to request completion"
 type: fix
-status: planned
+status: completed
 date: 2026-06-17
 execution: code
 ---
@@ -120,3 +120,31 @@ separate write request.
   completed plan evidence.
 - Audit the exact diff, generated artifacts, credentials, conflict markers,
   binaries, large files, and protected project/workflow paths.
+
+## Work Completed
+
+- Added a distinct retained `pulseSendRequest` and bound completion to exact
+  request identity on the main queue.
+- Replaced the fixed delayed refresh with observed response completion, clearing
+  the draft and refreshing the pulse list only after success.
+- Preserved the draft on failure while restoring the send throttle, button, and
+  text-field state on every owned completion.
+- Cancelled and cleared obsolete send requests before releasing send UI state
+  when the controller disappears.
+- Added ordering-sensitive static contracts and synchronized maintenance
+  guidance.
+
+## Verification Completed
+
+- All four Make gates passed from the repository root and through the absolute
+  Makefile path from an external directory.
+- The Python checker compiled, all maintained plist, XML, JSON, image, project,
+  workflow, source, and documentation contracts passed, and `git diff --check`
+  passed.
+- Eight isolated hostile mutations were rejected for retention, exact identity,
+  success-only publication, observed response completion, cancellation, UI
+  locking, guidance, and completed plan status.
+- The exact intended diff passed generated-artifact, credential-pattern,
+  conflict-marker, binary, large-file, mode, and protected-path audits.
+- Xcode is unavailable on Linux; static iOS baseline only, with no claim of
+  native UIKit, Alamofire, Digits, simulator, device, or backend execution.

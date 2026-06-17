@@ -34,6 +34,8 @@ Priority:
 - Keep the location share user guard before posting location updates
 - Keep the pulse send throttle from allowing repeat message posts during cooldown
 - Keep the pulse send session guard before request, throttle, and UI mutation
+- Keep pulse send request ownership authoritative through success, failure, and
+  controller disappearance
 - Keep one pulse refresh timer scoped to the visible controller lifecycle
 - Keep the pulse list user guard before refreshing message list state
 - Keep pulse row integrity across every rendered and read-state field

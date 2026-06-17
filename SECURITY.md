@@ -50,6 +50,8 @@ Helpful reports include:
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
 - The pulse send session guard should require one valid Digits session and
   normalized user ID before request, throttle, text, or button mutations.
+- Pulse send request ownership should reject stale callbacks, preserve failed
+  drafts, and cancel obsolete write requests before releasing send UI state.
 - The pulse refresh timer should be invalidated when the controller disappears
   so navigation cannot accumulate background refresh requests.
 - Pulse request ownership should reject callbacks from replaced or canceled

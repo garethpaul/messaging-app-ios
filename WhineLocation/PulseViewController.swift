@@ -39,6 +39,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
     var dataRead: [String] = []
     var sendAvailable = true
     private var pulseRequest: Request?
+    private var pulseSendRequest: Request?
 
     func getData() {
         pulseRequest?.cancel()
@@ -170,6 +171,9 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         refreshTimer = nil
         pulseRequest?.cancel()
         pulseRequest = nil
+        pulseSendRequest?.cancel()
+        pulseSendRequest = nil
+        resetPulseSendUI()
     }
 
     func keyboardWillShow(notification: NSNotification) {
@@ -206,36 +210,44 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
             // send Available is False
             sendAvailable = false
+            sendBtn.enabled = false
+            textField.enabled = false
 
             // Display button to red when sending
             self.sendBtn.setTitleColor(UIColor.redColor(), forState: UIControlState.Normal)
 
             // Send HTTP Request
-            Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text])
-
-            // Set Text Field Empty
-            self.textField.text = ""
-
-            // After 2 seconds perform request to get data
-            let delayTime = dispatch_time(DISPATCH_TIME_NOW,
-                Int64(1 * Double(NSEC_PER_SEC)))
-            dispatch_after(delayTime, dispatch_get_main_queue()) {
-
-                // Get the data
-                self.getData()
-
-                // Set availability to send to true
-                self.sendAvailable = true
-
-                // Display button back to white
-                self.sendBtn.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
-
-
+            let request = Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text])
+            pulseSendRequest = request
+            request.responseJSON { (req, res, json, error) in
+                self.finishPulseSendRequest(request, succeeded: error == nil)
             }
 
         }
 
 
+    }
+
+    func finishPulseSendRequest(request: Request, succeeded: Bool) {
+        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            guard self.pulseSendRequest === request else {
+                return
+            }
+
+            self.pulseSendRequest = nil
+            if succeeded {
+                self.textField.text = ""
+                self.getData()
+            }
+            self.resetPulseSendUI()
+        })
+    }
+
+    func resetPulseSendUI() {
+        self.sendAvailable = true
+        self.sendBtn.enabled = true
+        self.textField.enabled = true
+        self.sendBtn.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
     }
 
 

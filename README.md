@@ -73,6 +73,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   refresh cooldown so repeat taps do not post duplicate messages.
 - The pulse send session guard returns before request, throttle, or UI changes
   when the Digits session or normalized user ID is unavailable.
+- Pulse send request ownership retains the exact Alamofire write request,
+  clears and refreshes only after success, preserves the draft on failure, and
+  cancels obsolete sends when the controller disappears.
 - The pulse refresh timer is owned by the visible controller and invalidated
   when the screen disappears so navigation cannot accumulate refresh loops.
 - Pulse request ownership cancels replaced and disappearing list loads, and

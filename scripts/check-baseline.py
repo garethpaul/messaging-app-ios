@@ -121,6 +121,7 @@ def main():
         "docs/plans/2026-06-16-pulse-row-integrity.md",
         "docs/plans/2026-06-16-pulse-request-ownership.md",
         "docs/plans/2026-06-16-pulse-publication-ownership.md",
+        "docs/plans/2026-06-17-pulse-send-request-ownership.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -209,6 +210,7 @@ def main():
     pulse_row_integrity_plan = read("docs/plans/2026-06-16-pulse-row-integrity.md")
     pulse_request_ownership_plan = read("docs/plans/2026-06-16-pulse-request-ownership.md")
     pulse_publication_ownership_plan = read("docs/plans/2026-06-16-pulse-publication-ownership.md")
+    pulse_send_ownership_plan = read("docs/plans/2026-06-17-pulse-send-request-ownership.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -486,6 +488,33 @@ def main():
             "Digits.sharedInstance().session()." not in send_msg_method,
             "Pulse send must resolve one valid session before throttle, UI, and request mutation",
             failures)
+    send_request_index = send_msg_method.find('let request = Alamofire.request(.POST, getInfo("pulseListSendUrl")')
+    send_retain_index = send_msg_method.find("pulseSendRequest = request")
+    send_response_index = send_msg_method.find("request.responseJSON")
+    send_finish_call_index = send_msg_method.find("self.finishPulseSendRequest(request, succeeded: error == nil)")
+    send_finish_start = pulse.find("func finishPulseSendRequest(request: Request, succeeded: Bool)")
+    send_finish_end = pulse.find("\n    func resetPulseSendUI", send_finish_start)
+    send_finish_body = pulse[send_finish_start:send_finish_end]
+    send_identity_index = send_finish_body.find("guard self.pulseSendRequest === request")
+    send_clear_index = send_finish_body.find("self.pulseSendRequest = nil")
+    send_success_index = send_finish_body.find("if succeeded")
+    send_text_clear_index = send_finish_body.find('self.textField.text = ""')
+    send_refresh_index = send_finish_body.find("self.getData()")
+    send_reset_index = send_finish_body.find("self.resetPulseSendUI()")
+    require("private var pulseSendRequest: Request?" in pulse and
+            0 <= send_request_index < send_retain_index < send_response_index < send_finish_call_index and
+            send_finish_start >= 0 and send_finish_end > send_finish_start and
+            0 <= send_identity_index < send_clear_index < send_success_index < send_text_clear_index < send_refresh_index < send_reset_index,
+            "Pulse sends must retain exact request ownership through success-only publication",
+            failures)
+    require("dispatch_after" not in send_msg_method and
+            send_msg_method.count('self.textField.text = ""') == 1 and
+            "sendBtn.enabled = false" in send_msg_method and
+            "textField.enabled = false" in send_msg_method and
+            "self.sendBtn.enabled = true" in send_msg_method and
+            "self.textField.enabled = true" in send_msg_method,
+            "Pulse send UI must follow request completion instead of a fixed delay",
+            failures)
 
     for forbidden in ["Info.plist\n", "*.plist"]:
         require(forbidden not in gitignore, ".gitignore must not ignore committed plist baselines", failures)
@@ -621,6 +650,12 @@ def main():
             0 <= pulse_disappear_cancel_index < pulse_disappear_clear_index,
             "PulseViewController must cancel and clear its retained request on disappearance",
             failures)
+    pulse_send_disappear_cancel_index = disappear_body.find("pulseSendRequest?.cancel()")
+    pulse_send_disappear_clear_index = disappear_body.find("pulseSendRequest = nil")
+    pulse_send_disappear_reset_index = disappear_body.find("resetPulseSendUI()")
+    require(0 <= pulse_send_disappear_cancel_index < pulse_send_disappear_clear_index < pulse_send_disappear_reset_index,
+            "PulseViewController must cancel and clear its retained send before releasing send UI state",
+            failures)
     require("pulse refresh timer" in readme.lower() and
             "pulse refresh timer" in vision.lower() and
             "pulse refresh timer" in security.lower() and
@@ -639,10 +674,24 @@ def main():
             "pulse publication ownership" in changes.lower(),
             "project guidance must document pulse publication ownership",
             failures)
+    require("pulse send request ownership" in readme.lower() and
+            "pulse send request ownership" in vision.lower() and
+            "pulse send request ownership" in security.lower() and
+            "pulse send request ownership" in changes.lower(),
+            "project guidance must document pulse send request ownership",
+            failures)
     require("Status: completed" in pulse_timer_plan and
             "Five isolated hostile mutations were rejected" in pulse_timer_plan and
             "All four Make gates passed" in pulse_timer_plan,
             "pulse refresh timer plan must record completed status and verification",
+            failures)
+    require("status: completed" in pulse_send_ownership_plan and
+            "All four Make gates passed" in pulse_send_ownership_plan and
+            "Eight isolated hostile mutations were rejected" in pulse_send_ownership_plan and
+            "external directory" in pulse_send_ownership_plan and
+            "Xcode is unavailable on Linux" in pulse_send_ownership_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_send_ownership_plan, "Verification Completed")),
+            "pulse send request ownership plan must record completed verification",
             failures)
 
     tracked = tracked_files()
