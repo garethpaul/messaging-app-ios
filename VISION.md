@@ -31,6 +31,7 @@ Priority:
 - Keep the Digits login success guard before partner flow and identity storage
 - Keep the new partner user guard before partner flow backend requests
 - Keep partner prefix preservation from erasing already-entered partner numbers
+- Keep partner request ownership bound to the current visible appearance
 - Keep the location share user guard before posting location updates
 - Keep the pulse send throttle from allowing repeat message posts during cooldown
 - Keep the pulse send session guard before request, throttle, and UI mutation

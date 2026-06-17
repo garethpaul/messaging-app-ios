@@ -122,6 +122,7 @@ def main():
         "docs/plans/2026-06-16-pulse-request-ownership.md",
         "docs/plans/2026-06-16-pulse-publication-ownership.md",
         "docs/plans/2026-06-17-pulse-send-request-ownership.md",
+        "docs/plans/2026-06-17-partner-request-ownership.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "WhineLocation/Info.plist",
@@ -211,6 +212,7 @@ def main():
     pulse_request_ownership_plan = read("docs/plans/2026-06-16-pulse-request-ownership.md")
     pulse_publication_ownership_plan = read("docs/plans/2026-06-16-pulse-publication-ownership.md")
     pulse_send_ownership_plan = read("docs/plans/2026-06-17-pulse-send-request-ownership.md")
+    partner_request_ownership_plan = read("docs/plans/2026-06-17-partner-request-ownership.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -294,6 +296,55 @@ def main():
             failures)
     require("digitsSession.userID" not in new_partner and "session().userID" not in new_partner,
             "new partner flow must not bypass normalized Digits user ID lookup",
+            failures)
+    partner_appear_start = new_partner.find("override func viewWillAppear")
+    partner_appear_end = new_partner.find("override func viewWillDisappear", partner_appear_start)
+    partner_disappear_end = new_partner.find("@IBAction func phoneEditingDidBegin", partner_appear_end)
+    partner_appear_body = new_partner[partner_appear_start:partner_appear_end]
+    partner_disappear_body = new_partner[partner_appear_end:partner_disappear_end]
+    require("private var partnerRequest: Request?" in new_partner and
+            "private var isPartnerViewActive = false" in new_partner and
+            "private var partnerViewGeneration = 0" in new_partner and
+            "isPartnerViewActive = true" in partner_appear_body and
+            "partnerViewGeneration += 1" in partner_appear_body,
+            "new partner flow must retain requests and activate a new appearance generation",
+            failures)
+    partner_disappear_inactive = partner_disappear_body.find("isPartnerViewActive = false")
+    partner_disappear_generation = partner_disappear_body.find("partnerViewGeneration += 1")
+    partner_disappear_cancel = partner_disappear_body.find("partnerRequest?.cancel()")
+    partner_disappear_clear = partner_disappear_body.find("partnerRequest = nil")
+    require(-1 not in (partner_disappear_inactive, partner_disappear_generation,
+                       partner_disappear_cancel, partner_disappear_clear) and
+            partner_disappear_inactive < partner_disappear_generation <
+            partner_disappear_cancel < partner_disappear_clear,
+            "new partner disappearance must invalidate, cancel, and clear request ownership",
+            failures)
+    partner_action_start = new_partner.find("@IBAction func findPartnerBtn")
+    partner_action_end = new_partner.find("override func viewDidLoad", partner_action_start)
+    partner_action = new_partner[partner_action_start:partner_action_end]
+    partner_replace_cancel = partner_action.find("partnerRequest?.cancel()")
+    partner_replace_clear = partner_action.find("partnerRequest = nil")
+    partner_generation_capture = partner_action.find("let requestGeneration = partnerViewGeneration")
+    partner_request_create = partner_action.find("let request = Alamofire.request")
+    partner_request_retain = partner_action.find("partnerRequest = request")
+    partner_response = partner_action.find("request.responseJSON")
+    partner_main_queue = partner_action.find("dispatch_async(dispatch_get_main_queue())", partner_response)
+    partner_identity = partner_action.find("guard self.partnerRequest === request", partner_main_queue)
+    partner_owned_clear = partner_action.find("self.partnerRequest = nil", partner_identity)
+    partner_activity = partner_action.find("guard self.isPartnerViewActive &&", partner_owned_clear)
+    partner_generation = partner_action.find("requestGeneration == self.partnerViewGeneration", partner_activity)
+    partner_success = partner_action.find("error == nil else", partner_generation)
+    partner_segue = partner_action.find('self.performSegueWithIdentifier("waiting", sender: self)', partner_success)
+    require(-1 not in (partner_replace_cancel, partner_replace_clear, partner_generation_capture,
+                       partner_request_create, partner_request_retain, partner_response,
+                       partner_main_queue, partner_identity, partner_owned_clear,
+                       partner_activity, partner_generation, partner_success, partner_segue) and
+            partner_replace_cancel < partner_replace_clear < partner_generation_capture <
+            partner_request_create < partner_request_retain < partner_response < partner_main_queue <
+            partner_identity < partner_owned_clear < partner_activity < partner_generation <
+            partner_success < partner_segue and
+            new_partner.count("partnerRequest?.cancel()") == 2,
+            "new partner navigation must require current request and appearance ownership after replacement cancellation",
             failures)
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
             "location sharing must use POST",
@@ -680,6 +731,12 @@ def main():
             "pulse send request ownership" in changes.lower(),
             "project guidance must document pulse send request ownership",
             failures)
+    require("partner request ownership" in readme.lower() and
+            "partner request ownership" in vision.lower() and
+            "partner request ownership" in security.lower() and
+            "partner request ownership" in changes.lower(),
+            "project guidance must document partner request ownership",
+            failures)
     require("Status: completed" in pulse_timer_plan and
             "Five isolated hostile mutations were rejected" in pulse_timer_plan and
             "All four Make gates passed" in pulse_timer_plan,
@@ -692,6 +749,14 @@ def main():
             "Xcode is unavailable on Linux" in pulse_send_ownership_plan and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(pulse_send_ownership_plan, "Verification Completed")),
             "pulse send request ownership plan must record completed verification",
+            failures)
+    require("status: completed" in partner_request_ownership_plan and
+            "All four Make gates passed" in partner_request_ownership_plan and
+            "Nine isolated hostile mutations were rejected" in partner_request_ownership_plan and
+            "external directory" in partner_request_ownership_plan and
+            "Xcode is unavailable on Linux" in partner_request_ownership_plan and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", markdown_section(partner_request_ownership_plan, "Verification Completed")),
+            "partner request ownership plan must record completed verification",
             failures)
 
     tracked = tracked_files()

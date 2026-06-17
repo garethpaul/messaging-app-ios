@@ -69,6 +69,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The new partner user guard skips partner requests when the partner number, normalized Digits user ID, or Digits session is unavailable.
 - Partner prefix preservation keeps the `+1` seed for blank partner numbers
   without erasing already-entered partner input when the field is focused again.
+- Partner request ownership cancels superseded or disappearing lookups and
+  navigates only from the current visible appearance's successful request.
 - The pulse send throttle marks message sends unavailable during the short
   refresh cooldown so repeat taps do not post duplicate messages.
 - The pulse send session guard returns before request, throttle, or UI changes

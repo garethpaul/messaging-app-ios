@@ -14,6 +14,23 @@ class NewPartnerViewController: UIViewController {
 
     @IBOutlet var findPartnerBtn: UIButton!
     @IBOutlet var partnerNumber: UITextField!
+    private var partnerRequest: Request?
+    private var isPartnerViewActive = false
+    private var partnerViewGeneration = 0
+
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        isPartnerViewActive = true
+        partnerViewGeneration += 1
+    }
+
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        isPartnerViewActive = false
+        partnerViewGeneration += 1
+        partnerRequest?.cancel()
+        partnerRequest = nil
+    }
 
     @IBAction func phoneEditingDidBegin(sender: AnyObject) {
         applyPartnerNumberPrefixIfNeeded()
@@ -27,12 +44,25 @@ class NewPartnerViewController: UIViewController {
                 return
         }
         let userPhoneNumber = digitsSession.phoneNumber
+        partnerRequest?.cancel()
+        partnerRequest = nil
+        let requestGeneration = partnerViewGeneration
 
-        Alamofire.request(.POST, getInfo("newpartnerUrl"), parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber]).responseJSON { (req, res, json, error) in
-            if (error != nil) {
+        let request = Alamofire.request(.POST, getInfo("newpartnerUrl"), parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber])
+        partnerRequest = request
+        request.responseJSON { (req, res, json, error) in
+            dispatch_async(dispatch_get_main_queue()) {
+                guard self.partnerRequest === request else {
+                    return
+                }
 
-            } else {
-                // error
+                self.partnerRequest = nil
+                guard self.isPartnerViewActive &&
+                    requestGeneration == self.partnerViewGeneration &&
+                    error == nil else {
+                        return
+                }
+
                 self.performSegueWithIdentifier("waiting", sender: self)
             }
         }

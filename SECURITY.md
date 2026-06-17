@@ -46,6 +46,8 @@ Helpful reports include:
 - The Digits login success guard should prevent failed authentication callbacks from storing identity or opening the partner flow.
 - The new partner user guard should require a normalized Digits user ID and nonblank partner number before posting partner requests.
 - Partner prefix preservation should not erase a partially entered partner number when the partner field is focused again.
+- Partner request ownership should reject superseded and prior-appearance
+  callbacks before they can navigate to the waiting flow.
 - The location share user guard should require a normalized Digits user ID before posting location coordinates.
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
 - The pulse send session guard should require one valid Digits session and

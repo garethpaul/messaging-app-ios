@@ -2,6 +2,8 @@
 
 ## 2026-06-17
 
+- Added partner request ownership so repeated taps supersede older lookups and
+  stale callbacks cannot navigate after the screen disappears.
 - Added pulse send request ownership so drafts clear and pulse lists refresh
   only after the exact retained write succeeds, while failures remain retryable.
 

@@ -1,7 +1,7 @@
 ---
 title: "fix: Bind partner navigation to request ownership"
 type: fix
-status: in_progress
+status: completed
 date: 2026-06-17
 execution: code
 ---
@@ -86,8 +86,25 @@ not cover this separate partner-creation request.
 
 ## Work Completed
 
-Pending implementation.
+- Retained the active partner request and cancelled superseded requests before
+  starting the latest valid lookup.
+- Added visible-appearance state and a monotonic generation, invalidating and
+  cancelling ownership when disappearance begins.
+- Required exact request identity, active visibility, matching generation, and
+  success on the main queue before navigating to the waiting flow.
+- Extended the maintained checker and project guidance with ordering-sensitive
+  partner request ownership contracts.
 
 ## Verification Completed
 
-Pending implementation and validation.
+- All four Make gates passed from a no-hardlink isolated clone, and the absolute
+  Makefile gate passed from an external directory.
+- All four Make gates and the external-directory gate also passed against the
+  finalized worktree.
+- Nine isolated hostile mutations were rejected for request retention,
+  replacement cancellation, disappearance cancellation, exact identity,
+  activity, generation, success-only navigation, guidance, and plan status.
+- Python checker syntax and `git diff --check` passed before final worktree
+  validation.
+- Xcode is unavailable on Linux; no native UIKit, Alamofire, Digits, simulator,
+  device, or backend execution is claimed.
