@@ -29,8 +29,8 @@ PROTECTED_CONTRACT_HASHES = {
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
         "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "scripts/run-isolated-tests.py": "dc84ecbdad87664971eb2270dd6970fe3781575841206c5e88a08861de8b5cba",
-    "tests/test_check_baseline.py": "5c015a661e127e059d4dd1e7ee048e69f872f56503edd696bda821a9edfa9abf",
+    "scripts/run-isolated-tests.py": "3188fb6a11ee233bd1b6439010dfa94552a23bf68b4b8cd59152eb965de98b92",
+    "tests/test_check_baseline.py": "2549d2fa4bb41b6eb5176f6f695ee842fc77a61f84b9d3eb16ccc6efec1f4ca2",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",

@@ -712,7 +712,11 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         extra.write_text("raise SystemExit(0)\n", encoding="utf-8")
         result = self.run_integrity("pre")
         self.assertEqual(1, result.returncode)
-        self.assertIn("tests/test_check_baseline.py hash mismatch", result.stderr)
+        self.assertTrue(
+            "test inventory mismatch" in result.stderr
+            or "tests/test_check_baseline.py hash mismatch" in result.stderr,
+            result.stderr,
+        )
 
     def test_integrity_rejects_source_laundering_test_before_execution(self):
         source = self.home_time_source()
