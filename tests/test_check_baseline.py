@@ -318,6 +318,40 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertEqual(0, return_code, standard_error)
         self.assertEqual([], self.independent_contract_failures())
 
+    def test_repository_ownership_covers_all_paths(self):
+        codeowners = self.source(".github/CODEOWNERS").read_text(encoding="utf-8")
+        self.assertEqual("* @garethpaul\n", codeowners)
+
+    def test_agent_guidance_preserves_validation_boundaries(self):
+        guidance = self.source("AGENTS.md").read_text(encoding="utf-8")
+        for required_text in [
+            "make check",
+            "tests/test_check_baseline.py",
+            "orphaned legacy test source",
+            "Do not commit Fabric API keys",
+            "If a command above skips because a platform toolchain is missing",
+            "record the skipped command and why",
+        ]:
+            with self.subTest(required_text=required_text):
+                self.assertIn(required_text, guidance)
+        self.assertNotIn("legacy Xcode target", guidance)
+
+    def test_checker_rejects_obsolete_ci_baseline_plan(self):
+        obsolete_plan = self.source("docs/plans/2026-06-10-ci-baseline.md")
+        obsolete_plan.write_text("# Obsolete CI Baseline\n", encoding="utf-8")
+        self.assert_checker_rejects_with(
+            "obsolete CI baseline plan must remain absent",
+        )
+
+    def test_swiftyjson_reference_uses_https_and_final_newline(self):
+        source = self.source("WhineLocation/SwiftyJSON.swift").read_bytes()
+        self.assertIn(
+            b"https://datatracker.ietf.org/doc/html/rfc7231#section-4.3",
+            source,
+        )
+        self.assertNotIn(b"http://tools.ietf.org/html/rfc7231#section-4.3", source)
+        self.assertTrue(source.endswith(b"\n"))
+
     def test_current_owned_requests_validate_http_status_before_callback_publication(self):
         for relative_path, expected_chain in [
             ("WhineLocation/NewPartnerViewController.swift", PARTNER_VALIDATED_REQUEST),

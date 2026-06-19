@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATE = Path(tempfile.gettempdir()) / "messaging-ios-integrity-state.json"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "0326c0953dbffafd78b57f3435e76b0f935bfe630a575ce147fc854830619242",
+    "tests/test_check_baseline.py": "b55ea5266c2205725c8b3f84e27add4dbab41f11951583fdec8fc738edf49b93",
 }
 EXPECTED_PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":

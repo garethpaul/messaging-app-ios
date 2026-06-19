@@ -29,8 +29,8 @@ PROTECTED_CONTRACT_HASHES = {
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
         "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "scripts/run-isolated-tests.py": "826b03306804442da7581cd8bac59ec54ccef16dd29eab2a092b176988e381ec",
-    "tests/test_check_baseline.py": "0326c0953dbffafd78b57f3435e76b0f935bfe630a575ce147fc854830619242",
+    "scripts/run-isolated-tests.py": "f7fbdb15008b1c8e5bd177fa7fd4b680f2f965697af5a026e8770339e2f353a6",
+    "tests/test_check_baseline.py": "b55ea5266c2205725c8b3f84e27add4dbab41f11951583fdec8fc738edf49b93",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -207,6 +207,12 @@ def main():
     ]
     for relative_path in required_files:
         require((ROOT / relative_path).is_file(), f"Required file missing: {relative_path}", failures)
+
+    require(
+        not (ROOT / "docs/plans/2026-06-10-ci-baseline.md").exists(),
+        "obsolete CI baseline plan must remain absent",
+        failures,
+    )
 
     for relative_path, expected_hash in PROTECTED_CONTRACT_HASHES.items():
         path = ROOT / relative_path
