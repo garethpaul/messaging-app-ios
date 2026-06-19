@@ -50,7 +50,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
             return
         }
 
-        let request = Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId])
+        let request = Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId]).validate(statusCode: 200..<300)
         pulseRequest = request
         request.responseJSON { (req, res, json, error) in
             guard self.pulseRequest === request else {
@@ -217,7 +217,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
             self.sendBtn.setTitleColor(UIColor.redColor(), forState: UIControlState.Normal)
 
             // Send HTTP Request
-            let request = Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text])
+            let request = Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text]).validate(statusCode: 200..<300)
             pulseSendRequest = request
             request.responseJSON { (req, res, json, error) in
                 self.finishPulseSendRequest(request, succeeded: error == nil)

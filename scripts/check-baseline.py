@@ -29,8 +29,8 @@ PROTECTED_CONTRACT_HASHES = {
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
         "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "scripts/run-isolated-tests.py": "3188fb6a11ee233bd1b6439010dfa94552a23bf68b4b8cd59152eb965de98b92",
-    "tests/test_check_baseline.py": "2549d2fa4bb41b6eb5176f6f695ee842fc77a61f84b9d3eb16ccc6efec1f4ca2",
+    "scripts/run-isolated-tests.py": "826b03306804442da7581cd8bac59ec54ccef16dd29eab2a092b176988e381ec",
+    "tests/test_check_baseline.py": "0326c0953dbffafd78b57f3435e76b0f935bfe630a575ce147fc854830619242",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -411,6 +411,7 @@ def main():
     partner_replace_clear = partner_action.find("partnerRequest = nil")
     partner_generation_capture = partner_action.find("let requestGeneration = partnerViewGeneration")
     partner_request_create = partner_action.find("let request = Alamofire.request")
+    partner_status_validation = partner_action.find(".validate(statusCode: 200..<300)", partner_request_create)
     partner_request_retain = partner_action.find("partnerRequest = request")
     partner_response = partner_action.find("request.responseJSON")
     partner_main_queue = partner_action.find("dispatch_async(dispatch_get_main_queue())", partner_response)
@@ -421,15 +422,19 @@ def main():
     partner_success = partner_action.find("error == nil else", partner_generation)
     partner_segue = partner_action.find('self.performSegueWithIdentifier("waiting", sender: self)', partner_success)
     require(-1 not in (partner_replace_cancel, partner_replace_clear, partner_generation_capture,
-                       partner_request_create, partner_request_retain, partner_response,
+                       partner_request_create, partner_status_validation,
+                       partner_request_retain, partner_response,
                        partner_main_queue, partner_identity, partner_owned_clear,
                        partner_activity, partner_generation, partner_success, partner_segue) and
             partner_replace_cancel < partner_replace_clear < partner_generation_capture <
-            partner_request_create < partner_request_retain < partner_response < partner_main_queue <
+            partner_request_create < partner_status_validation < partner_request_retain < partner_response < partner_main_queue <
             partner_identity < partner_owned_clear < partner_activity < partner_generation <
             partner_success < partner_segue and
             new_partner.count("partnerRequest?.cancel()") == 2,
             "new partner navigation must require current request and appearance ownership after replacement cancellation",
+            failures)
+    require(partner_status_validation >= 0,
+            "New partner requests must validate HTTP 2xx status before navigation",
             failures)
     require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
             "location sharing must use POST",
@@ -462,6 +467,7 @@ def main():
     waiting_session_index = waiting_check.find("guard let digitsSession = Digits.sharedInstance().session()")
     waiting_normalized_user_index = waiting_check.find("let userId = normalizedDigitsUserID(digitsSession.userID)")
     waiting_request_index = waiting_check.find('Alamofire.request(.POST, getInfo("waitingUrl")')
+    waiting_status_validation_index = waiting_check.find(".validate(statusCode: 200..<300)", waiting_request_index)
     waiting_response_index = waiting_check.find(".responseJSON")
     waiting_request_identity_index = waiting_check.find("guard self.waitingRequest === request else")
     waiting_request_clear_index = waiting_check.find("self.waitingRequest = nil", waiting_response_index)
@@ -486,11 +492,14 @@ def main():
             waiting_guard_index < waiting_loading_index,
             "Waiting checks must reject inactive entry before request or UI state mutation",
             failures)
-    require(0 <= waiting_session_index < waiting_normalized_user_index < waiting_request_index and
+    require(0 <= waiting_session_index < waiting_normalized_user_index < waiting_request_index < waiting_status_validation_index and
             '"userId": userId' in waiting_check and
             '"phoneNumber": digitsSession.phoneNumber' in waiting_check and
             "Digits.sharedInstance().session()." not in waiting_check,
             "Waiting match checks must resolve one normalized Digits session before requesting",
+            failures)
+    require(0 <= waiting_status_validation_index < waiting_response_index,
+            "Waiting match checks must validate HTTP 2xx status before navigation",
             failures)
     require(0 <= waiting_response_index < waiting_response_finish_index < waiting_json_guard_index < waiting_parse_index and
             "JSON(json!)" not in waiting_check and
@@ -544,6 +553,7 @@ def main():
     pulse_initial_clear_index = get_data_method.find("pulseRequest = nil")
     pulse_user_guard_index = get_data_method.find("guard let userId = currentDigitsUserID() else")
     pulse_request_index = get_data_method.find('let request = Alamofire.request(.POST, getInfo("pulseListUrl")')
+    pulse_status_validation_index = get_data_method.find(".validate(statusCode: 200..<300)", pulse_request_index)
     pulse_retain_index = get_data_method.find("pulseRequest = request")
     pulse_response_index = get_data_method.find("request.responseJSON")
     pulse_identity_index = get_data_method.find("guard self.pulseRequest === request else")
@@ -552,8 +562,11 @@ def main():
     require("private var pulseRequest: Request?" in pulse and
             get_data_method.count("pulseRequest?.cancel()") == 1 and
             get_data_method.count("pulseRequest = nil") == 3 and
-            0 <= pulse_cancel_index < pulse_initial_clear_index < pulse_user_guard_index < pulse_request_index < pulse_retain_index < pulse_response_index < pulse_identity_index < pulse_error_index < pulse_callback_clear_index,
+            0 <= pulse_cancel_index < pulse_initial_clear_index < pulse_user_guard_index < pulse_request_index < pulse_status_validation_index < pulse_retain_index < pulse_response_index < pulse_identity_index < pulse_error_index < pulse_callback_clear_index,
             "Pulse list transport must cancel replacements and identity-bind callbacks before state mutation",
+            failures)
+    require(0 <= pulse_status_validation_index < pulse_response_index,
+            "Pulse list refresh must validate HTTP 2xx status before publishing rows",
             failures)
     require("guard let userId = currentDigitsUserID() else" in get_data_method and
             'parameters: ["userId": userId]' in get_data_method and
@@ -611,6 +624,7 @@ def main():
             "Pulse send must resolve one valid session before throttle, UI, and request mutation",
             failures)
     send_request_index = send_msg_method.find('let request = Alamofire.request(.POST, getInfo("pulseListSendUrl")')
+    send_status_validation_index = send_msg_method.find(".validate(statusCode: 200..<300)", send_request_index)
     send_retain_index = send_msg_method.find("pulseSendRequest = request")
     send_response_index = send_msg_method.find("request.responseJSON")
     send_finish_call_index = send_msg_method.find("self.finishPulseSendRequest(request, succeeded: error == nil)")
@@ -624,10 +638,13 @@ def main():
     send_refresh_index = send_finish_body.find("self.getData()")
     send_reset_index = send_finish_body.find("self.resetPulseSendUI()")
     require("private var pulseSendRequest: Request?" in pulse and
-            0 <= send_request_index < send_retain_index < send_response_index < send_finish_call_index and
+            0 <= send_request_index < send_status_validation_index < send_retain_index < send_response_index < send_finish_call_index and
             send_finish_start >= 0 and send_finish_end > send_finish_start and
             0 <= send_identity_index < send_clear_index < send_success_index < send_text_clear_index < send_refresh_index < send_reset_index,
             "Pulse sends must retain exact request ownership through success-only publication",
+            failures)
+    require(0 <= send_status_validation_index < send_response_index,
+            "Pulse sends must validate HTTP 2xx status before clearing drafts",
             failures)
     require("dispatch_after" not in send_msg_method and
             send_msg_method.count('self.textField.text = ""') == 1 and

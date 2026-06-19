@@ -48,7 +48,7 @@ class NewPartnerViewController: UIViewController {
         partnerRequest = nil
         let requestGeneration = partnerViewGeneration
 
-        let request = Alamofire.request(.POST, getInfo("newpartnerUrl"), parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber])
+        let request = Alamofire.request(.POST, getInfo("newpartnerUrl"), parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber]).validate(statusCode: 200..<300)
         partnerRequest = request
         request.responseJSON { (req, res, json, error) in
             dispatch_async(dispatch_get_main_queue()) {

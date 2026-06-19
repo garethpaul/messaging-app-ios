@@ -22,6 +22,26 @@ REQUEST = (
 PARAMETERLESS_VALIDATED_RESPONSE = REQUEST + ".validate().responseJSON"
 STATUS_VALIDATED_RESPONSE = REQUEST + ".validate(statusCode: 200..<300).responseJSON"
 UNVALIDATED_RESPONSE = REQUEST + ".responseJSON"
+PARTNER_REQUEST = (
+    'let request = Alamofire.request(.POST, getInfo("newpartnerUrl"), '
+    'parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber])'
+)
+PARTNER_VALIDATED_REQUEST = PARTNER_REQUEST + ".validate(statusCode: 200..<300)"
+PULSE_LIST_REQUEST = (
+    'let request = Alamofire.request(.POST, getInfo("pulseListUrl"), '
+    'parameters: ["userId": userId])'
+)
+PULSE_LIST_VALIDATED_REQUEST = PULSE_LIST_REQUEST + ".validate(statusCode: 200..<300)"
+PULSE_SEND_REQUEST = (
+    'let request = Alamofire.request(.POST, getInfo("pulseListSendUrl"), '
+    'parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text])'
+)
+PULSE_SEND_VALIDATED_REQUEST = PULSE_SEND_REQUEST + ".validate(statusCode: 200..<300)"
+WAITING_REQUEST = (
+    'let request = Alamofire.request(.POST, getInfo("waitingUrl"), '
+    'parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber])'
+)
+WAITING_VALIDATED_REQUEST = WAITING_REQUEST + ".validate(statusCode: 200..<300)"
 PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
         "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
@@ -248,6 +268,15 @@ class HomeTimeValidationContractTests(unittest.TestCase):
     def home_time_source(self):
         return self.snapshot_root / "WhineLocation/HomeTimeViewController.swift"
 
+    def source(self, relative_path):
+        return self.snapshot_root / relative_path
+
+    def replace_source(self, relative_path, current, replacement):
+        source_path = self.source(relative_path)
+        source = source_path.read_text(encoding="utf-8")
+        self.assertIn(current, source)
+        source_path.write_text(source.replace(current, replacement, 1), encoding="utf-8")
+
     def replace_status_validation(self, replacement):
         source_path = self.home_time_source()
         source = source_path.read_text(encoding="utf-8")
@@ -274,6 +303,11 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             standard_error,
         )
 
+    def assert_checker_rejects_with(self, expected_message):
+        return_code, _, standard_error = self.run_checker()
+        self.assertEqual(1, return_code)
+        self.assertIn(expected_message, standard_error)
+
     def assert_independent_contract_rejects(self):
         self.assertTrue(self.independent_contract_failures())
 
@@ -283,6 +317,60 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         return_code, _, standard_error = self.run_checker()
         self.assertEqual(0, return_code, standard_error)
         self.assertEqual([], self.independent_contract_failures())
+
+    def test_current_owned_requests_validate_http_status_before_callback_publication(self):
+        for relative_path, expected_chain in [
+            ("WhineLocation/NewPartnerViewController.swift", PARTNER_VALIDATED_REQUEST),
+            ("WhineLocation/PulseViewController.swift", PULSE_LIST_VALIDATED_REQUEST),
+            ("WhineLocation/PulseViewController.swift", PULSE_SEND_VALIDATED_REQUEST),
+            ("WhineLocation/WaitingViewController.swift", WAITING_VALIDATED_REQUEST),
+        ]:
+            with self.subTest(relative_path=relative_path):
+                source = self.source(relative_path).read_text(encoding="utf-8")
+                self.assertIn(expected_chain, source)
+
+        return_code, _, standard_error = self.run_checker()
+        self.assertEqual(0, return_code, standard_error)
+
+    def test_checker_rejects_new_partner_request_without_status_validation(self):
+        self.replace_source(
+            "WhineLocation/NewPartnerViewController.swift",
+            PARTNER_VALIDATED_REQUEST,
+            PARTNER_REQUEST,
+        )
+        self.assert_checker_rejects_with(
+            "New partner requests must validate HTTP 2xx status before navigation",
+        )
+
+    def test_checker_rejects_pulse_list_request_without_status_validation(self):
+        self.replace_source(
+            "WhineLocation/PulseViewController.swift",
+            PULSE_LIST_VALIDATED_REQUEST,
+            PULSE_LIST_REQUEST,
+        )
+        self.assert_checker_rejects_with(
+            "Pulse list refresh must validate HTTP 2xx status before publishing rows",
+        )
+
+    def test_checker_rejects_pulse_send_request_without_status_validation(self):
+        self.replace_source(
+            "WhineLocation/PulseViewController.swift",
+            PULSE_SEND_VALIDATED_REQUEST,
+            PULSE_SEND_REQUEST,
+        )
+        self.assert_checker_rejects_with(
+            "Pulse sends must validate HTTP 2xx status before clearing drafts",
+        )
+
+    def test_checker_rejects_waiting_request_without_status_validation(self):
+        self.replace_source(
+            "WhineLocation/WaitingViewController.swift",
+            WAITING_VALIDATED_REQUEST,
+            WAITING_REQUEST,
+        )
+        self.assert_checker_rejects_with(
+            "Waiting match checks must validate HTTP 2xx status before navigation",
+        )
 
     def test_checker_rejects_whole_method_block_comment_substitution(self):
         source_path = self.home_time_source()

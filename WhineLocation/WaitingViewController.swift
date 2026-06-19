@@ -60,7 +60,7 @@ class WaitingViewController: UIViewController {
                     return
             }
 
-            let request = Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber])
+            let request = Alamofire.request(.POST, getInfo("waitingUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber]).validate(statusCode: 200..<300)
             self.waitingRequest = request
             request.responseJSON { (req, res, json, error) in
                 guard self.waitingRequest === request else {
