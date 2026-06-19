@@ -48,7 +48,7 @@ class HomeTimeViewController: UIViewController {
         dateFormatter.dateFormat = "hh:mm a" //format style. Browse online to get a format that fits your needs.
         let dateString = dateFormatter.stringFromDate(uiPicker.date)
         
-        Alamofire.request(.POST, getInfo("newHometimeUrl"), parameters: ["userId": userId, "homeTime": dateString]).responseJSON { (req, res, json, error) in
+        Alamofire.request(.POST, getInfo("newHometimeUrl"), parameters: ["userId": userId, "homeTime": dateString]).validate(statusCode: 200..<300).responseJSON { (req, res, json, error) in
             guard error == nil else {
                 return
             }
