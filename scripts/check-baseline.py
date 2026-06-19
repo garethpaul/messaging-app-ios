@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from _hashlib import openssl_sha256
 import json
 import plistlib
 import re
@@ -13,6 +14,47 @@ ROOT = Path(__file__).resolve().parents[1]
 OLD_FABRIC_API_KEY = "abb870ac2c6cd77fc0a3ee166f786a86748f4eb9"
 OLD_CRASHLYTICS_SECRET = "47d331d25396fd56e08c5c5891c16a003ba5647e584bf8fc07feb0e8ae92ab92"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+PROTECTED_CONTRACT_HASHES = {
+    "WhineLocation/HomeTimeViewController.swift":
+        "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
+    "WhineLocation/Base.lproj/Main.storyboard":
+        "a621749ce902822ff3b7cda43b33619b815b22efdb25bac35fa30677b845bfb5",
+    "WhineLocation.xcodeproj/project.pbxproj":
+        "ea729e7bd458396bfa8d32dfef24c22747f6d89c440b4266f35da54194db3244",
+    "WhineLocation.xcodeproj/project.xcworkspace/contents.xcworkspacedata":
+        "2e227e22f3c5f01d6ffeeefdea778b54eb534d8f5c7f8b79a11a1598133bc8d9",
+    "WhineLocation.xcworkspace/contents.xcworkspacedata":
+        "c81e4a8c14e87e445f0c8a056af182b7d6923df91ef3a4ea0f9ee7a48e164441",
+    "WhineLocation/ServiceKeys.xcconfig.example":
+        "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
+    ".github/workflows/check.yml":
+        "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
+    "scripts/run-isolated-tests.py": "ff4912f13271cfa26f5519c006e3776c01029d87cb9cca1eae227cbd33205508",
+    "tests/test_check_baseline.py": "df201f61e1b4bec395b0aeaae342ab912c1d2aa31d2c309ed88857a4a4e57a88",
+}
+EXPECTED_INTERFACE_FILES = [
+    "WhineLocation/Base.lproj/LaunchScreen.xib",
+    "WhineLocation/Base.lproj/Main.storyboard",
+    "WhineLocation/DirectMessageCell.xib",
+    "WhineLocation/PulseTableCell.xib",
+    "WhineLocation/ReceivedMessage.xib",
+]
+EXPECTED_XCODE_GRAPH_FILES = [
+    "WhineLocation.xcodeproj/project.pbxproj",
+    "WhineLocation.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+    "WhineLocation.xcworkspace/contents.xcworkspacedata",
+    "WhineLocation/ServiceKeys.xcconfig.example",
+]
+EXPECTED_MAKEFILE = '''.PHONY: build check lint test
+
+lint test build: check
+
+check:
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py post
+'''
 
 
 def read(relative_path):
@@ -25,6 +67,31 @@ def markdown_section(text, heading):
         text,
     )
     return match.group(1).strip() if match else ""
+
+
+def sha256_file(path):
+    return openssl_sha256(path.read_bytes()).hexdigest()
+
+
+def interface_files():
+    return sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in ROOT.rglob("*")
+        if path.suffix.lower() in {".storyboard", ".xib"}
+    )
+
+
+def xcode_graph_files():
+    return sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in ROOT.rglob("*")
+        if path.is_file() and (
+            ".xcodeproj/" in path.as_posix()
+            or ".xcworkspace/" in path.as_posix()
+            or path.name.lower().endswith(".xcconfig")
+            or path.name.lower().endswith(".xcconfig.example")
+        )
+    )
 
 
 def require(condition, message, failures):
@@ -101,6 +168,8 @@ def main():
         "docs/plans/2026-06-10-home-time-submission-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
+        "scripts/run-isolated-tests.py",
+        "tests/test_check_baseline.py",
         "WhineLocation/Info.plist",
         "WhineLocation/ServiceKeys.xcconfig.example",
         "WhineLocation/User.swift",
@@ -121,6 +190,29 @@ def main():
     ]
     for relative_path in required_files:
         require((ROOT / relative_path).is_file(), f"Required file missing: {relative_path}", failures)
+
+    for relative_path, expected_hash in PROTECTED_CONTRACT_HASHES.items():
+        path = ROOT / relative_path
+        require(not path.is_symlink() and path.is_file(),
+                f"protected home-time contract must be a regular file: {relative_path}",
+                failures)
+        if not path.is_symlink() and path.is_file():
+            require(sha256_file(path) == expected_hash,
+                    f"protected home-time contract hash mismatch: {relative_path}",
+                    failures)
+
+    actual_interface_files = interface_files()
+    require(actual_interface_files == EXPECTED_INTERFACE_FILES,
+            "protected home-time contract interface inventory mismatch",
+            failures)
+    for relative_path in actual_interface_files:
+        path = ROOT / relative_path
+        require(not path.is_symlink() and path.is_file(),
+                f"protected home-time contract interface must be a regular file: {relative_path}",
+                failures)
+    require(xcode_graph_files() == EXPECTED_XCODE_GRAPH_FILES,
+            "protected home-time contract Xcode graph inventory mismatch",
+            failures)
 
     for xml_file in [
         "docs/readme-overview.svg",
@@ -262,20 +354,6 @@ def main():
             "session().userID" not in share_location,
             "location sharing must require a normalized Digits user ID before posting",
             failures)
-    require('Alamofire.request(.POST, getInfo("newHometimeUrl")' in home_time,
-            "hometime updates must use POST",
-            failures)
-    send_time_method = home_time.split("@IBAction func sendTime", 1)[1].split("override func prepareForSegue", 1)[0]
-    require("guard let userId = currentDigitsUserID() else" in send_time_method and
-            "session().userID" not in send_time_method,
-            "home-time updates must require a normalized Digits user ID before posting",
-            failures)
-    response_index = send_time_method.find(".responseJSON")
-    success_guard_index = send_time_method.find("guard error == nil else")
-    segue_index = send_time_method.find('self.performSegueWithIdentifier("presentNav", sender: self)')
-    require(0 <= response_index < success_guard_index < segue_index,
-            "home-time navigation must occur only after a successful POST callback",
-            failures)
     require('Alamofire.request(.POST, getInfo("beaconUrl")' in core_location,
             "beacon updates must use POST",
             failures)
@@ -321,8 +399,8 @@ def main():
     for expected in ["*.local.xcconfig", "*.secrets.xcconfig", "*.local.plist", "*.secrets.plist", ".env"]:
         require(expected in gitignore, f".gitignore must include {expected}", failures)
 
-    require(".PHONY: build check lint test" in makefile and "lint test build: check" in makefile,
-            "Makefile must expose lint, test, build, and check gate targets",
+    require(makefile == EXPECTED_MAKEFILE,
+            "protected home-time contract Makefile must run tests before the checker",
             failures)
 
     tracked = tracked_files()
@@ -443,22 +521,21 @@ def main():
         "make test",
         "make build",
         "python3 -m py_compile scripts/check-baseline.py",
+        "python3 -I scripts/run-isolated-tests.py test",
         "git diff --check",
         "27287606534",
         "27402324851",
         "854a1c6566e359a602b1582cdd106a1cfb5b4242",
         "guard let userId = currentDigitsUserID() else",
+        ".validate(statusCode: 200..<300).responseJSON",
         "guard error == nil else",
         'performSegueWithIdentifier("presentNav", sender: self)',
     ]:
         require(evidence in home_time_verification,
                 f"home time submission guard verification must record {evidence}",
                 failures)
-    require("permissions:\n  contents: read" in workflow and "cancel-in-progress: true" in workflow and
-            "runs-on: macos-15" in workflow and "timeout-minutes: 10" in workflow and
-            "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" in workflow and
-            "run: make check" in workflow,
-            "Check workflow must stay pinned, read-only, and bounded",
+    require("MAKEFLAGS" not in workflow and "make check" not in workflow,
+            "protected workflow must execute isolated tests and checker directly",
             failures)
 
     if shutil.which("xcodebuild"):
