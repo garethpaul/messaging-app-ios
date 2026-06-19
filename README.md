@@ -69,10 +69,37 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The new partner user guard skips partner requests when the partner number, normalized Digits user ID, or Digits session is unavailable.
 - Partner prefix preservation keeps the `+1` seed for blank partner numbers
   without erasing already-entered partner input when the field is focused again.
+- Partner request ownership cancels superseded or disappearing lookups and
+  navigates only from the current visible appearance's successful request.
 - The pulse send throttle marks message sends unavailable during the short
   refresh cooldown so repeat taps do not post duplicate messages.
+- The pulse send session guard returns before request, throttle, or UI changes
+  when the Digits session or normalized user ID is unavailable.
+- Pulse send request ownership retains the exact Alamofire write request,
+  clears and refreshes only after success, preserves the draft on failure, and
+  cancels obsolete sends when the controller disappears.
+- The pulse refresh timer is owned by the visible controller and invalidated
+  when the screen disappears so navigation cannot accumulate refresh loops.
+- Pulse request ownership cancels replaced and disappearing list loads, and
+  only the exact retained request may replace the current pulse snapshot.
+- Pulse publication ownership revalidates the exact retained request on the
+  main queue before a successful snapshot can mutate table or read-state data.
 - The pulse list user guard skips list refreshes without a normalized Digits
   user ID and guards missing JSON before parsing messages.
+- Pulse row integrity keeps the five table and read-state fields aligned by
+  admitting complete records only and publishing replacement arrays together.
+- The waiting session and response guard skips match checks without one
+  normalized Digits session and guards missing JSON before parsing.
+- The waiting concurrent check guard prevents overlapping refresh requests and
+  repeated navigation after a successful match.
+- The waiting view activity guard prevents delayed checks and responses from
+  requesting or navigating after the controller leaves the screen.
+- The waiting appearance generation guard starts a fresh automatic check for
+  each appearance and permanently rejects callbacks from an earlier appearance.
+- The waiting active check entry guard rejects off-screen check starts before
+  request state or loading UI can change.
+- Waiting request cancellation stops retained Alamofire transport when the
+  controller disappears and identity-binds callback cleanup across re-entry.
 - The home time submission guard requires a normalized Digits user ID and only
   opens the next screen after a successful Alamofire response.
 
@@ -82,13 +109,16 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `scripts/check-baseline.py`, which verifies project wiring, credential
   placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
   Digits login success guard, the new partner user guard, the location share
-  user guard, the pulse send throttle, the pulse list user guard, and message
-  read-state guards.
-- Pinned `macos-15` GitHub Actions runs `make check` and parses
-  `WhineLocation.xcodeproj` with `xcodebuild -list`. This hosted validation does
-  not install pods, receive service credentials, authenticate users, contact
-  backends, share location, process messages, build or sign the app, or launch
-  a simulator.
+  user guard, the pulse send throttle, the pulse list user guard, the waiting
+  session and response guard, and message read-state guards.
+- The Make gates are location-independent. From another directory, pass the
+  checkout's Makefile by absolute path, such as
+  `make -f /path/to/messaging-app-ios/Makefile check`.
+- Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout,
+  runs `make check`, and parses `WhineLocation.xcodeproj` with
+  `xcodebuild -list`. This hosted validation does not install pods, receive
+  service credentials, authenticate users, contact backends, share location,
+  process messages, build or sign the app, or launch a simulator.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -108,6 +138,20 @@ When the required SDK or runtime is unavailable, use static checks and source re
   state while a send refresh is pending.
 - The pulse list user guard should keep message list refreshes behind
   normalized Digits user IDs and guarded response JSON.
+- Pulse row integrity should keep partial backend records out of live table
+  state and replace every parallel row array before reloading.
+- The waiting session and response guard should keep match requests behind one
+  normalized Digits session and complete loading state from the response path.
+- The waiting concurrent check guard should keep only one match check in flight
+  and make successful navigation terminal for that controller.
+- The waiting view activity guard should make delayed requests and responses
+  inert after the waiting controller disappears.
+- The waiting appearance generation guard should bind every delayed request and
+  response to the controller appearance that started it.
+- The waiting active check entry guard should keep inactive callers from
+  stranding the one-request state before the next appearance.
+- Waiting request cancellation should stop obsolete transport without allowing
+  a canceled callback to clear a newer appearance's request.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
 - The home time submission guard should keep home-time POSTs behind normalized
   Digits session IDs and successful backend responses.
@@ -126,6 +170,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   project, plist, credential, backend URL, Swift, or documentation changes.
+- Use an absolute Makefile path when running those gates outside the checkout.
 - See `docs/plans/2026-06-09-make-gate-aliases.md` for the local gate alias
   baseline.
 - See `docs/plans/2026-06-09-partner-prefix-preservation.md` for the partner

@@ -31,15 +31,29 @@ Priority:
 - Keep the Digits login success guard before partner flow and identity storage
 - Keep the new partner user guard before partner flow backend requests
 - Keep partner prefix preservation from erasing already-entered partner numbers
+- Keep partner request ownership bound to the current visible appearance
 - Keep the location share user guard before posting location updates
 - Keep the pulse send throttle from allowing repeat message posts during cooldown
+- Keep the pulse send session guard before request, throttle, and UI mutation
+- Keep pulse send request ownership authoritative through success, failure, and
+  controller disappearance
+- Keep one pulse refresh timer scoped to the visible controller lifecycle
 - Keep the pulse list user guard before refreshing message list state
+- Keep pulse row integrity across every rendered and read-state field
+- Keep pulse request ownership bound to the latest retained list request
+- Keep pulse publication ownership authoritative through main-queue mutation
+- Keep the waiting session and response guard before match requests and parsing
+- Keep the waiting concurrent check guard around delayed requests and navigation
+- Keep the waiting view activity guard around delayed work and response handling
+- Keep the waiting appearance generation guard across controller re-entry
+- Keep the waiting active check entry guard before request-state mutation
+- Keep waiting request cancellation bound to the exact controller appearance
 - Keep the home time submission guard behind normalized identity and successful
   backend responses
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
-- Keep hosted project validation pinned and read-only on macOS through
-  `WhineLocation.xcodeproj` parsing and `make check`
+- Keep hosted project validation pinned, read-only, and credential-free on
+  macOS through `WhineLocation.xcodeproj` parsing and `make check`
 - Avoid committing real credentials, signing material, message data, or location data
 - Maintain the CocoaPods workspace and legacy dependency context
 
@@ -84,6 +98,8 @@ The pulse send throttle should keep repeat taps from posting duplicate messages
 while the message list refresh is pending.
 The pulse list user guard should keep message list refreshes tied to normalized
 Digits session identities and guarded response JSON.
+Pulse row integrity should keep partial records out of live table state and
+publish every replacement array before reloading rows.
 The home time submission guard should keep home-time updates tied to normalized
 Digits identities and only navigate after successful Alamofire responses.
 

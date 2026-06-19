@@ -38,66 +38,88 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
     var dataId: [String] = []
     var dataRead: [String] = []
     var sendAvailable = true
+    private var pulseRequest: Request?
+    private var pulseSendRequest: Request?
 
     func getData() {
+        pulseRequest?.cancel()
+        pulseRequest = nil
+
         guard let userId = currentDigitsUserID() else {
             endRefreshingIfNeeded()
             return
         }
 
-        // clear data
-        dataDate.removeAll(keepCapacity: false)
-        dataInfo.removeAll(keepCapacity: false)
-        dataType.removeAll(keepCapacity: false)
-        dataId.removeAll(keepCapacity: false)
-        dataRead.removeAll(keepCapacity: false)
-        
-        Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId]).responseJSON { (req, res, json, error) in
+        let request = Alamofire.request(.POST, getInfo("pulseListUrl"), parameters: ["userId": userId]).validate(statusCode: 200..<300)
+        pulseRequest = request
+        request.responseJSON { (req, res, json, error) in
+            guard self.pulseRequest === request else {
+                return
+            }
+
             if (error != nil) {
-                self.endRefreshingIfNeeded()
+                self.finishPulseRequest(request)
             } else {
                 guard let jsonValue = json else {
-                    self.endRefreshingIfNeeded()
+                    self.finishPulseRequest(request)
                     return
                 }
 
                 var json = JSON(jsonValue)
+                var nextDataType: [String] = []
+                var nextDataInfo: [String] = []
+                var nextDataDate: [String] = []
+                var nextDataId: [String] = []
+                var nextDataRead: [String] = []
 
                 for (index: String, subJson: JSON) in json {
-                    //Do something you want
-
-                    if let _dataType = subJson["dataType"].string {
-                        self.dataType.append(_dataType)
+                    guard let dataType = subJson["dataType"].string,
+                        let dataInfo = subJson["dataInfo"].string,
+                        let dataDate = subJson["date"].string,
+                        let dataId = subJson["rndId"].string,
+                        let dataRead = subJson["isRead"].string else {
+                            continue
                     }
 
-                    if let _dataInfo = subJson["dataInfo"].string {
-                        self.dataInfo.append(_dataInfo)
-                    }
-
-                    if let _dataDate = subJson["date"].string {
-                        self.dataDate.append(_dataDate)
-                    }
-
-                    if let _dataId = subJson["rndId"].string {
-                        self.dataId.append(_dataId)
-                    }
-
-                    if let _dataRead = subJson["isRead"].string {
-                        self.dataRead.append(_dataRead)
-                    }
+                    nextDataType.append(dataType)
+                    nextDataInfo.append(dataInfo)
+                    nextDataDate.append(dataDate)
+                    nextDataId.append(dataId)
+                    nextDataRead.append(dataRead)
                 }
 
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    guard self.pulseRequest === request else {
+                        return
+                    }
+
+                    self.pulseRequest = nil
+                    self.dataType = nextDataType
+                    self.dataInfo = nextDataInfo
+                    self.dataDate = nextDataDate
+                    self.dataId = nextDataId
+                    self.dataRead = nextDataRead
                     self.tableView.reloadData()
                     
                     compareRead(self.dataId)
+                    self.endRefreshingIfNeeded()
                 })
-                self.endRefreshingIfNeeded()
 
             }
         }
         
         
+    }
+
+    func finishPulseRequest(request: Request) {
+        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            guard self.pulseRequest === request else {
+                return
+            }
+
+            self.pulseRequest = nil
+            self.endRefreshingIfNeeded()
+        })
     }
 
     func endRefreshingIfNeeded() {
@@ -107,6 +129,7 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     // move bar up
     var kbHeight: CGFloat!
+    var refreshTimer: NSTimer?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -129,7 +152,8 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("keyboardWillShow:"), name: UIKeyboardWillShowNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("keyboardWillHide:"), name: UIKeyboardWillHideNotification, object: nil)
 
-        NSTimer.scheduledTimerWithTimeInterval(
+        refreshTimer?.invalidate()
+        refreshTimer = NSTimer.scheduledTimerWithTimeInterval(
             30.0,
             target: self,
             selector: Selector("getData"),
@@ -143,6 +167,13 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
         super.viewWillDisappear(animated)
 
         NSNotificationCenter.defaultCenter().removeObserver(self)
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        pulseRequest?.cancel()
+        pulseRequest = nil
+        pulseSendRequest?.cancel()
+        pulseSendRequest = nil
+        resetPulseSendUI()
     }
 
     func keyboardWillShow(notification: NSNotification) {
@@ -170,40 +201,53 @@ class PulseViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     @IBAction func sendMsg(sender: AnyObject) {
 
+        guard let digitsSession = Digits.sharedInstance().session(),
+            let userId = normalizedDigitsUserID(digitsSession.userID) else {
+                return
+        }
+
         if sendAvailable {
 
             // send Available is False
             sendAvailable = false
+            sendBtn.enabled = false
+            textField.enabled = false
 
             // Display button to red when sending
             self.sendBtn.setTitleColor(UIColor.redColor(), forState: UIControlState.Normal)
 
             // Send HTTP Request
-            Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": Digits.sharedInstance().session().userID, "phoneNumber": Digits.sharedInstance().session().phoneNumber, "msg": self.textField.text])
-
-            // Set Text Field Empty
-            self.textField.text = ""
-
-            // After 2 seconds perform request to get data
-            let delayTime = dispatch_time(DISPATCH_TIME_NOW,
-                Int64(1 * Double(NSEC_PER_SEC)))
-            dispatch_after(delayTime, dispatch_get_main_queue()) {
-
-                // Get the data
-                self.getData()
-
-                // Set availability to send to true
-                self.sendAvailable = true
-
-                // Display button back to white
-                self.sendBtn.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
-
-
+            let request = Alamofire.request(.POST, getInfo("pulseListSendUrl"), parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber, "msg": self.textField.text]).validate(statusCode: 200..<300)
+            pulseSendRequest = request
+            request.responseJSON { (req, res, json, error) in
+                self.finishPulseSendRequest(request, succeeded: error == nil)
             }
 
         }
 
 
+    }
+
+    func finishPulseSendRequest(request: Request, succeeded: Bool) {
+        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            guard self.pulseSendRequest === request else {
+                return
+            }
+
+            self.pulseSendRequest = nil
+            if succeeded {
+                self.textField.text = ""
+                self.getData()
+            }
+            self.resetPulseSendUI()
+        })
+    }
+
+    func resetPulseSendUI() {
+        self.sendAvailable = true
+        self.sendBtn.enabled = true
+        self.textField.enabled = true
+        self.sendBtn.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
     }
 
 

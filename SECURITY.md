@@ -33,10 +33,10 @@ Helpful reports include:
 - Review found database, model, query, or persistence-related code; changes in those areas should receive security-focused review before merge.
 - Dependency manifests detected: Podfile, Podfile.lock. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
 - Run `make lint`, `make test`, `make build`, and `make check` after changing Xcode project metadata, `Info.plist` handling, Fabric/Crashlytics setup, backend URLs, Swift sources, Podfile metadata, or security docs.
-- The pinned macOS workflow only parses project metadata and static resources;
-  it does not install pods, receive service credentials, authenticate users,
-  contact backends, share location, process messages, build or sign the app, or
-  launch a simulator.
+- The pinned macOS workflow uses a read-only, credential-free checkout and only
+  parses project metadata and static resources; it does not install pods,
+  receive service credentials, authenticate users, contact backends, share
+  location, process messages, build or sign the app, or launch a simulator.
 - `WhineLocation/Info.plist` should stay tracked with placeholder-safe metadata and privacy usage descriptions.
 - Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, phone identity data, messages, and location data should stay out of git.
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
@@ -46,10 +46,36 @@ Helpful reports include:
 - The Digits login success guard should prevent failed authentication callbacks from storing identity or opening the partner flow.
 - The new partner user guard should require a normalized Digits user ID and nonblank partner number before posting partner requests.
 - Partner prefix preservation should not erase a partially entered partner number when the partner field is focused again.
+- Partner request ownership should reject superseded and prior-appearance
+  callbacks before they can navigate to the waiting flow.
 - The location share user guard should require a normalized Digits user ID before posting location coordinates.
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
+- The pulse send session guard should require one valid Digits session and
+  normalized user ID before request, throttle, text, or button mutations.
+- Pulse send request ownership should reject stale callbacks, preserve failed
+  drafts, and cancel obsolete write requests before releasing send UI state.
+- The pulse refresh timer should be invalidated when the controller disappears
+  so navigation cannot accumulate background refresh requests.
+- Pulse request ownership should reject callbacks from replaced or canceled
+  list requests before they can mutate pulse rows or read-state arrays.
+- Pulse publication ownership should revalidate the exact retained request at
+  main-queue publication time so queued stale snapshots remain inert.
 - The pulse list user guard should require a normalized Digits user ID and
   guarded response JSON before refreshing message list state.
+- Pulse row integrity should reject records missing any rendered or read-state
+  field and publish aligned replacement arrays before table reload.
+- The waiting session and response guard should require one normalized Digits
+  session and guarded response JSON before parsing match state.
+- The waiting concurrent check guard should prevent overlapping match requests
+  and repeated successful navigation.
+- The waiting view activity guard should prevent off-screen match requests,
+  state mutation, and navigation after the controller disappears.
+- The waiting appearance generation guard should reject stale match callbacks
+  after the same controller disappears and becomes active again.
+- The waiting active check entry guard should reject inactive check starts
+  before request state, loading UI, or delayed work changes.
+- Waiting request cancellation should cancel retained transport on controller
+  disappearance and identity-bind callback cleanup before current-state changes.
 - The home time submission guard should require a normalized Digits user ID
   before posting and should not present failed requests as successful updates.
 

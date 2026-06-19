@@ -1,5 +1,52 @@
 # Changes
 
+## 2026-06-17
+
+- Added partner request ownership so repeated taps supersede older lookups and
+  stale callbacks cannot navigate after the screen disappears.
+- Added pulse send request ownership so drafts clear and pulse lists refresh
+  only after the exact retained write succeeds, while failures remain retryable.
+
+## 2026-06-16
+
+- Added pulse publication ownership so a successful snapshot revalidates its
+  exact request on the main queue before mutating table and read-state data.
+- Added pulse request ownership so replaced and disappearing list loads are
+  canceled and stale callbacks cannot overwrite newer pulse snapshots.
+- Added pulse row integrity so incomplete backend records are skipped and all
+  table and read-state arrays are replaced together before reload.
+
+## 2026-06-15
+
+- Added waiting request cancellation so obsolete Alamofire transport is stopped
+  without allowing canceled callbacks to clear a newer request.
+- Added a waiting concurrent check guard to prevent overlapping delayed match
+  requests and repeated navigation after a successful response.
+- Added a waiting view activity guard so delayed work and responses become inert
+  after the controller leaves the screen.
+- Added a waiting appearance generation guard so a callback from an earlier
+  appearance cannot mutate state or navigate after controller re-entry.
+- Added a waiting active check entry guard so off-screen callers cannot strand
+  request state or suppress the next appearance's automatic check.
+
+## 2026-06-14
+
+- Added a waiting session and response guard before match requests and JSON
+  parsing, with loading-state completion tied to guarded outcomes.
+- Scoped the repeating pulse refresh timer to the visible controller lifecycle.
+- Added a pulse send session guard before request, throttle, text, or button
+  mutation when the Digits session or normalized user ID is unavailable.
+
+## 2026-06-13
+
+- Made every Make verification alias resolve the static checker from the
+  checkout, including absolute Makefile invocations elsewhere.
+
+## 2026-06-12
+
+- Stopped the hosted checkout from persisting its credential and added an exact
+  static contract for the sole workflow, permissions, and checkout step.
+
 ## 2026-06-10
 
 - Added a home time submission guard so updates require a normalized Digits
