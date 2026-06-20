@@ -11,8 +11,10 @@ import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OLD_FABRIC_API_KEY = "abb870ac2c6cd77fc0a3ee166f786a86748f4eb9"
-OLD_CRASHLYTICS_SECRET = "47d331d25396fd56e08c5c5891c16a003ba5647e584bf8fc07feb0e8ae92ab92"
+OLD_SERVICE_CREDENTIAL_SHA256 = {
+    "3f8cfdba97b73400e169aecfac5540370308e17795fdc141ebf7f97257bb3338",
+    "dc49243b9c92562f572f4cf215d9bfafbd081fb4cec327ec9f074320aba5ac19",
+}
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PROTECTED_CONTRACT_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
@@ -29,8 +31,8 @@ PROTECTED_CONTRACT_HASHES = {
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
         "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "scripts/run-isolated-tests.py": "f7fbdb15008b1c8e5bd177fa7fd4b680f2f965697af5a026e8770339e2f353a6",
-    "tests/test_check_baseline.py": "b55ea5266c2205725c8b3f84e27add4dbab41f11951583fdec8fc738edf49b93",
+    "scripts/run-isolated-tests.py": "0cc75c60973584141bff072b545248116e697ef48a0dde678c660dca98cb839f",
+    "tests/test_check_baseline.py": "72d3799ac722cb61216b7110afa0e95352e04af4dc60e4f5bb463631f43580c2",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -45,7 +47,7 @@ EXPECTED_XCODE_GRAPH_FILES = [
     "WhineLocation.xcworkspace/contents.xcworkspacedata",
     "WhineLocation/ServiceKeys.xcconfig.example",
 ]
-EXPECTED_MAKEFILE = '''ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+EXPECTED_MAKEFILE = '''override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: build check lint test
 
@@ -73,6 +75,17 @@ def markdown_section(text, heading):
 
 def sha256_file(path):
     return openssl_sha256(path.read_bytes()).hexdigest()
+
+
+def contains_credential_fingerprint(content, fingerprints):
+    candidates = re.findall(
+        r"(?<![0-9A-Fa-f])(?:[0-9A-Fa-f]{40}|[0-9A-Fa-f]{64})(?![0-9A-Fa-f])",
+        content,
+    )
+    return any(
+        openssl_sha256(candidate.encode("ascii")).hexdigest() in fingerprints
+        for candidate in candidates
+    )
 
 
 def interface_files():
@@ -310,7 +323,7 @@ def main():
         *sorted((ROOT / ".github/workflows").glob("*.yaml")),
     ]
 
-    require(OLD_FABRIC_API_KEY not in project and OLD_CRASHLYTICS_SECRET not in project,
+    require(not contains_credential_fingerprint(project, OLD_SERVICE_CREDENTIAL_SHA256),
             "project must not contain the old committed Fabric/Crashlytics values",
             failures)
     require("FABRIC_API_KEY" in project and "CRASHLYTICS_BUILD_SECRET" in project,

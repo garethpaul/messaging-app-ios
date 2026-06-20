@@ -71,7 +71,7 @@ XCODE_GRAPH_INVENTORY = [
     "WhineLocation.xcworkspace/contents.xcworkspacedata",
     "WhineLocation/ServiceKeys.xcconfig.example",
 ]
-EXPECTED_MAKEFILE = '''ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+EXPECTED_MAKEFILE = '''override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: build check lint test
 
@@ -317,6 +317,16 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         return_code, _, standard_error = self.run_checker()
         self.assertEqual(0, return_code, standard_error)
         self.assertEqual([], self.independent_contract_failures())
+
+    def test_credential_fingerprint_detection_uses_non_reversible_digest(self):
+        candidate = "a" * 40
+        fingerprint = openssl_sha256(candidate.encode("ascii")).hexdigest()
+        self.assertTrue(
+            CHECKER.contains_credential_fingerprint(candidate, {fingerprint}),
+        )
+        self.assertFalse(
+            CHECKER.contains_credential_fingerprint("b" * 40, {fingerprint}),
+        )
 
     def test_repository_ownership_covers_all_paths(self):
         codeowners = self.source(".github/CODEOWNERS").read_text(encoding="utf-8")
