@@ -31,8 +31,8 @@ PROTECTED_CONTRACT_HASHES = {
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
         "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "scripts/run-isolated-tests.py": "0cc75c60973584141bff072b545248116e697ef48a0dde678c660dca98cb839f",
-    "tests/test_check_baseline.py": "72d3799ac722cb61216b7110afa0e95352e04af4dc60e4f5bb463631f43580c2",
+    "scripts/run-isolated-tests.py": "c921b788b87bbda5c7afafe792f38a49d8d37473488bef36d245b2bfaaa4250d",
+    "tests/test_check_baseline.py": "3fbd05ce1ff306d91bd83d611ae29b9a88d7d2c3151d21c1262b53ec33a3447c",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -47,7 +47,10 @@ EXPECTED_XCODE_GRAPH_FILES = [
     "WhineLocation.xcworkspace/contents.xcworkspacedata",
     "WhineLocation/ServiceKeys.xcconfig.example",
 ]
-EXPECTED_MAKEFILE = '''override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+EXPECTED_MAKEFILE = '''ifneq ($(origin MAKEFILE_LIST),file)
+$(error MAKEFILE_LIST must not be overridden)
+endif
+override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
 
 .PHONY: build check lint test
 
@@ -196,6 +199,7 @@ def main():
         "docs/plans/2026-06-16-pulse-publication-ownership.md",
         "docs/plans/2026-06-17-pulse-send-request-ownership.md",
         "docs/plans/2026-06-17-partner-request-ownership.md",
+        "docs/plans/2026-06-21-spaced-makefile-path.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "scripts/run-isolated-tests.py",
@@ -317,6 +321,7 @@ def main():
     pulse_publication_ownership_plan = read("docs/plans/2026-06-16-pulse-publication-ownership.md")
     pulse_send_ownership_plan = read("docs/plans/2026-06-17-pulse-send-request-ownership.md")
     partner_request_ownership_plan = read("docs/plans/2026-06-17-partner-request-ownership.md")
+    spaced_make_plan = read("docs/plans/2026-06-21-spaced-makefile-path.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -685,10 +690,18 @@ def main():
     require("make -f /path/to/messaging-app-ios/Makefile check" in readme,
             "README must document location-independent Makefile invocation",
             failures)
+    require("paths contain spaces" in readme and "MAKEFILE_LIST" in readme,
+            "README must document spaced paths and protected Makefile metadata",
+            failures)
     require("status: completed" in location_independent_make_plan and
             "root and external-directory" in location_independent_make_plan and
             "five isolated hostile mutations" in location_independent_make_plan,
             "location-independent Make plan must record completed root, external, and mutation verification",
+            failures)
+    require("status: completed" in spaced_make_plan and
+            "literal apostrophe" in spaced_make_plan and
+            "MAKEFILE_LIST" in spaced_make_plan,
+            "spaced Makefile path plan must record completed hostile-path verification",
             failures)
     require("status: completed" in pulse_send_session_plan and
             "hostile mutations" in pulse_send_session_plan and
