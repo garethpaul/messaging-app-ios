@@ -113,7 +113,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   session and response guard, and message read-state guards.
 - The Make gates are location-independent. From another directory, pass the
   checkout's Makefile by absolute path, such as
-  `make -f /path/to/messaging-app-ios/Makefile check`.
+  `make -f /path/to/messaging-app-ios/Makefile check`. This remains supported
+  when checkout paths contain spaces or a literal apostrophe. `ROOT` and
+  `MAKEFILE_LIST` overrides cannot redirect verification into another tree.
 - Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout,
   runs `make check`, and parses `WhineLocation.xcodeproj` with
   `xcodebuild -list`. This hosted validation does not install pods, receive

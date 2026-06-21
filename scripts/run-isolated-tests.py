@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATE = Path(tempfile.gettempdir()) / "messaging-ios-integrity-state.json"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "72d3799ac722cb61216b7110afa0e95352e04af4dc60e4f5bb463631f43580c2",
+    "tests/test_check_baseline.py": "3fbd05ce1ff306d91bd83d611ae29b9a88d7d2c3151d21c1262b53ec33a3447c",
 }
 EXPECTED_PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
@@ -30,7 +30,7 @@ EXPECTED_PROTECTED_HASHES = {
     "WhineLocation/ServiceKeys.xcconfig.example":
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml": "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "Makefile": "a5d2fe9341ac00c7f297796cfac1576b9c3153537a5011b0facef20c668ad313",
+    "Makefile": "e5a020a8371f4ac96c9e73539cb6b3c00e7c6af59105898525f8f3f09ff1b562",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",

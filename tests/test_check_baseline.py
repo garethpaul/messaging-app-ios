@@ -71,7 +71,10 @@ XCODE_GRAPH_INVENTORY = [
     "WhineLocation.xcworkspace/contents.xcworkspacedata",
     "WhineLocation/ServiceKeys.xcconfig.example",
 ]
-EXPECTED_MAKEFILE = '''override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+EXPECTED_MAKEFILE = '''ifneq ($(origin MAKEFILE_LIST),file)
+$(error MAKEFILE_LIST must not be overridden)
+endif
+override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
 
 .PHONY: build check lint test
 
@@ -176,6 +179,57 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def tearDown(self):
         self.temporary_directory.cleanup()
+
+    def test_makefile_preserves_hostile_spaced_checkout_root(self):
+        checkout = self.snapshot_root / "checkout with spaces 'quoted' [hostile]"
+        external = self.snapshot_root / "external caller"
+        checkout.mkdir()
+        external.mkdir()
+        (checkout / "Makefile").write_text(EXPECTED_MAKEFILE, encoding="utf-8")
+
+        for target in ("check", "lint", "test", "build"):
+            for extra_arguments in ((), ("ROOT=/tmp/untrusted",), ("-e", "ROOT=/tmp/untrusted")):
+                with self.subTest(target=target, extra_arguments=extra_arguments):
+                    result = subprocess.run(
+                        ["make", "--dry-run", "-f", str(checkout / "Makefile"),
+                         *extra_arguments, target],
+                        cwd=external,
+                        check=True,
+                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    self.assertIn(str(checkout / "scripts/run-isolated-tests.py"), result.stdout)
+                    self.assertNotIn("/tmp/untrusted/", result.stdout)
+
+    def test_makefile_rejects_makefile_list_injection(self):
+        checkout = self.snapshot_root / "checkout with spaces 'quoted' [hostile]"
+        external = self.snapshot_root / "external caller"
+        checkout.mkdir()
+        external.mkdir()
+        (checkout / "Makefile").write_text(EXPECTED_MAKEFILE, encoding="utf-8")
+        environment = os.environ.copy()
+        environment["MAKEFILE_LIST"] = "/tmp/untrusted"
+
+        attacks = (
+            (["make", "--dry-run", "-f", str(checkout / "Makefile"),
+              "MAKEFILE_LIST=/tmp/untrusted", "check"], None),
+            (["make", "-e", "--dry-run", "-f", str(checkout / "Makefile"), "check"],
+             environment),
+        )
+        for command, attack_environment in attacks:
+            with self.subTest(command=command):
+                result = subprocess.run(
+                    command,
+                    cwd=external,
+                    env=attack_environment,
+                    check=False,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("MAKEFILE_LIST must not be overridden", result.stderr)
 
     def run_checker(self):
         standard_output = io.StringIO()
