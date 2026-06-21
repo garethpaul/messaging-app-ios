@@ -30,10 +30,10 @@ PROTECTED_CONTRACT_HASHES = {
     "WhineLocation/ServiceKeys.xcconfig.example":
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
-        "883dd06542e5e21d21fc87885ac198101d78ae9e2e9250255ea9a6190131066c",
-    "scripts/verify-validation-chain.py": "7180f483321e812d6aea8884ab2caeb3001addb4c2028faa7222f4a1b6924abd",
-    "scripts/run-isolated-tests.py": "0594d7c91ae5585153f5732d13a396d5e53226a1683d79914ea0c532c8407a19",
-    "tests/test_check_baseline.py": "e02a11e095ed0990d07f13b7211532d2819b27f718adc84aad146d97443b07bb",
+        "405c3ea5122dd20fb41d06ebe3f285a091c5f2951b618041089e7f7c39731bc4",
+    "scripts/verify-validation-chain.py": "2627400b26522bcd2b17d56a93259f65fbc5a8f916739d0822e6ebae2b18279f",
+    "scripts/run-isolated-tests.py": "e084395a52183d222935ce66ce93ece97c71ba1255814d1d9fb999d3644814aa",
+    "tests/test_check_baseline.py": "8e51e1b13766517b9ae5dfeba9a00e68e7f9aa0f432a7a2705aac5f5e53b7cbf",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -58,6 +58,7 @@ override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(print
 lint test build: check
 
 check:
+\t/usr/bin/printf '%s  %s\\n' '2627400b26522bcd2b17d56a93259f65fbc5a8f916739d0822e6ebae2b18279f' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
@@ -65,7 +66,7 @@ check:
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
 '''
 EXPECTED_WORKFLOW_RUNS = [
-    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean',
+    '/usr/bin/printf \'%s  %s\\n\' \'2627400b26522bcd2b17d56a93259f65fbc5a8f916739d0822e6ebae2b18279f\' \'scripts/verify-validation-chain.py\' | /usr/bin/shasum -a 256 -c - && env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean',
     'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json',
     'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json',
     'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py',

@@ -7,6 +7,8 @@
   attempts to redirect isolated verification.
 - Added a verifier-first validation gate so `scripts/run-isolated-tests.py` is
   hashed before it can run isolated preflight, tests, or postflight checks.
+- Added a hosted workflow SHA-256 check for `scripts/verify-validation-chain.py`
+  so the first verifier bytes are authenticated before Python executes them.
 
 ## 2026-06-17
 

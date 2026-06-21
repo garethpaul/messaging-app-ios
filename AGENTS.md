@@ -40,7 +40,9 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
 - Start with the narrowest relevant test or Make target, then run `make check` before handing off if the change is not documentation-only.
 - Hosted validation must keep `scripts/verify-validation-chain.py` ahead of
   `scripts/run-isolated-tests.py`; the runner is not trusted until that
-  verifier has authenticated it.
+  verifier has authenticated it. The hosted workflow must also keep the
+  hardcoded `/usr/bin/shasum` digest check immediately before executing the
+  verifier; changing that first command changes the workflow trust boundary.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 
 ## PR / change guidance

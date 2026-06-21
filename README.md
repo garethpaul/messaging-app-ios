@@ -119,10 +119,14 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   when checkout paths contain spaces or a literal apostrophe. `ROOT` and
   `MAKEFILE_LIST` overrides cannot redirect verification into another tree.
 - Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout
-  and runs the direct verifier-first pre/test/baseline/post commands with
-  clean-tree checks. This hosted validation does not install pods, receive
-  service credentials, authenticate users, contact backends, share location,
-  process messages, build or sign the app, or launch a simulator.
+  and authenticates `scripts/verify-validation-chain.py` with a hardcoded
+  SHA-256 digest through `/usr/bin/shasum` before Python can execute it. The
+  authenticated verifier then runs the direct verifier-first
+  pre/test/baseline/post commands with clean-tree checks. This hosted validation
+  does not install pods, receive service credentials, authenticate users,
+  contact backends, share location, process messages, build or sign the app, or
+  launch a simulator. A pull request that changes the first workflow command is
+  changing the hosted trust boundary and must be reviewed as workflow code.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.

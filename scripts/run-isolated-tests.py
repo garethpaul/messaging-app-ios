@@ -12,9 +12,11 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATE = Path(tempfile.gettempdir()) / "messaging-ios-integrity-state.json"
+SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "e02a11e095ed0990d07f13b7211532d2819b27f718adc84aad146d97443b07bb",
+    "tests/test_check_baseline.py": "8e51e1b13766517b9ae5dfeba9a00e68e7f9aa0f432a7a2705aac5f5e53b7cbf",
 }
 EXPECTED_PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
@@ -29,8 +31,6 @@ EXPECTED_PROTECTED_HASHES = {
         "c81e4a8c14e87e445f0c8a056af182b7d6923df91ef3a4ea0f9ee7a48e164441",
     "WhineLocation/ServiceKeys.xcconfig.example":
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
-    ".github/workflows/check.yml": "883dd06542e5e21d21fc87885ac198101d78ae9e2e9250255ea9a6190131066c",
-    "Makefile": "184cc525c798c29514e616f29b219fa2b951d911d857b1ddef1f0eed412f32f6",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -53,6 +53,71 @@ def sha256_bytes(value):
 
 def sha256_file(path):
     return sha256_bytes(path.read_bytes())
+
+
+def validation_root_hash():
+    return sha256_file(ROOT / VALIDATION_ROOT_PATH)
+
+
+def hosted_validation_root_authentication():
+    return (
+        "/usr/bin/printf '%s  %s\\n' '" + validation_root_hash() +
+        "' 'scripts/verify-validation-chain.py' | /usr/bin/shasum -a 256 -c -"
+    )
+
+
+def make_validation_root_authentication():
+    return (
+        "\t/usr/bin/printf '%s  %s\\n' '" + validation_root_hash() +
+        "' \"$(ROOT)/scripts/verify-validation-chain.py\" | /usr/bin/shasum -a 256 -c -"
+    )
+
+
+def expected_makefile():
+    return '''ifneq ($(origin MAKEFILE_LIST),file)
+$(error MAKEFILE_LIST must not be overridden)
+endif
+override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
+
+.PHONY: build check lint test
+
+lint test build: check
+
+check:
+''' + make_validation_root_authentication() + '''
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/check-baseline.py"
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
+'''
+
+
+def expected_workflow():
+    return """name: Check
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  baseline:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - run: """ + hosted_validation_root_authentication() + """ && env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean
+      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py
+      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json
+"""
 
 
 def git_output(*arguments):
@@ -107,6 +172,16 @@ def integrity_failures(require_clean=False):
             failures.append(relative_path + " must be a regular file")
         elif sha256_file(path) != expected_hash:
             failures.append(relative_path + " hash mismatch")
+    expected_files = {
+        ".github/workflows/check.yml": expected_workflow(),
+        "Makefile": expected_makefile(),
+    }
+    for relative_path, expected_content in expected_files.items():
+        path = ROOT / relative_path
+        if path.is_symlink() or not path.is_file():
+            failures.append(relative_path + " must be a regular file")
+        elif path.read_text(encoding="utf-8", errors="replace") != expected_content:
+            failures.append(relative_path + " contract mismatch")
     test_files = sorted(
         path.relative_to(ROOT).as_posix()
         for path in (ROOT / "tests").rglob("*")
