@@ -43,10 +43,12 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
   verifier has authenticated it. The hosted workflow must also keep the
   hardcoded `/usr/bin/shasum` digest check immediately before executing the
   verifier; changing that first command changes the workflow trust boundary.
-- Repository Make targets reject preloaded or additional Makefiles and
-  non-executing/error-ignoring modes. GNU Make may parse a caller-supplied
-  preload before this repository can reject it, so only the documented
-  single-`-f` invocation is inside the local Make trust boundary.
+- Repository Make targets reject non-executing/error-ignoring modes, protected
+  metadata overrides, GNU Make `--eval` definitions, and later single-colon
+  public recipe replacement. GNU
+  Make may parse caller startup code before this repository can reject it, and
+  caller-added double-colon recipes run with caller authority, so only the
+  documented single-`-f` invocation is inside the local Make trust boundary.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 
 ## PR / change guidance

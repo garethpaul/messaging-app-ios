@@ -9,9 +9,13 @@
   hashed before it can run isolated preflight, tests, or postflight checks.
 - Added a hosted workflow SHA-256 check for `scripts/verify-validation-chain.py`
   so the first verifier bytes are authenticated before Python executes them.
-- Rejected preloaded, earlier, and later Makefiles plus non-executing Make
-  modes, fixed validation tools to system paths, and authenticated the static
-  checker before the isolated runner imports or executes it.
+- Rejected protected Make metadata overrides, later single-colon public recipe
+  replacement, and non-executing Make modes; documented caller startup code and
+  caller-added double-colon recipes as outside the local Make trust boundary.
+  Fixed validation tools to system paths and authenticated the static checker
+  before the isolated runner imports or executes it.
+- Rejected GNU Make `--eval` during parsing before target-specific variables can
+  replace the authenticated validation root or execute a caller-selected shell.
 
 ## 2026-06-17
 

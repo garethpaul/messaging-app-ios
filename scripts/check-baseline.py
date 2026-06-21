@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 VALIDATION_ROOT_HASH = openssl_sha256(
     (ROOT / "scripts/verify-validation-chain.py").read_bytes()
 ).hexdigest()
+XCODEBUILD_LIST_TIMEOUT_SECONDS = 60
 OLD_SERVICE_CREDENTIAL_SHA256 = {
     "3f8cfdba97b73400e169aecfac5540370308e17795fdc141ebf7f97257bb3338",
     "dc49243b9c92562f572f4cf215d9bfafbd081fb4cec327ec9f074320aba5ac19",
@@ -51,6 +52,9 @@ EXPECTED_MAKEFILE = '''.PHONY: __repository-make-authority build check lint test
 
 override SHELL := /bin/sh
 override .SHELLFLAGS := -c
+ifneq ($(origin -*-eval-flags-*-),undefined)
+$(error --eval must not be used for repository verification)
+endif
 ifneq ($(filter command line,$(origin MAKEFLAGS)),)
 $(error MAKEFLAGS must not be overridden for repository verification)
 endif
@@ -84,16 +88,18 @@ ifeq ($(strip $(ROOT)),)
 $(error repository Makefile path could not be resolved)
 endif
 
-build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
-build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
-build check lint test: __repository-make-authority
+build check lint test:: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test:: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test:: __repository-make-authority
 
 __repository-make-authority::
 \t@:
 
-lint test build: check
+lint:: check
+test:: check
+build:: check
 
-check:
+check::
 \t/usr/bin/printf '%s  %s\\n' 'VALIDATION_ROOT_SHA256' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
@@ -204,6 +210,33 @@ def tracked_files():
         stderr=subprocess.PIPE,
     )
     return result.stdout.splitlines()
+
+
+def check_xcodebuild_project(failures):
+    if Path("/usr/bin/xcodebuild").is_file():
+        try:
+            result = subprocess.run(
+                ["/usr/bin/xcodebuild", "-list", "-project", "WhineLocation.xcodeproj"],
+                cwd=ROOT,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=XCODEBUILD_LIST_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as error:
+            detail = (error.stderr or "").strip()
+            message = (
+                "xcodebuild timed out parsing WhineLocation.xcodeproj "
+                f"after {XCODEBUILD_LIST_TIMEOUT_SECONDS}s"
+            )
+            if detail:
+                message += ": " + detail
+            failures.append(message)
+            return
+        require(result.returncode == 0,
+                "xcodebuild could not parse WhineLocation.xcodeproj: " + result.stderr.strip(), failures)
+    else:
+        print("xcodebuild unavailable; static iOS baseline only.")
 
 
 def main():
@@ -750,6 +783,18 @@ def main():
     require("paths contain spaces" in readme and "MAKEFILE_LIST" in readme,
             "README must document spaced paths and protected Makefile metadata",
             failures)
+    require("later single-colon public recipe replacement fails closed" in readme,
+            "README must document later single-colon recipe replacement behavior",
+            failures)
+    require("caller-added double-colon recipes" in readme and
+            "can run with caller authority" in readme,
+            "README must document caller-added double-colon recipe boundary",
+            failures)
+    require("caller-supplied Make programs" in spaced_make_plan and
+            "outside the" in spaced_make_plan and
+            "local Make trust boundary" in spaced_make_plan,
+            "spaced Makefile path plan must record caller-supplied Make boundary",
+            failures)
     require("status: completed" in location_independent_make_plan and
             "root and external-directory" in location_independent_make_plan and
             "five isolated hostile mutations" in location_independent_make_plan,
@@ -1166,18 +1211,7 @@ def main():
             "completed work, and make check verification",
             failures)
 
-    if Path("/usr/bin/xcodebuild").is_file():
-        result = subprocess.run(
-            ["/usr/bin/xcodebuild", "-list", "-project", "WhineLocation.xcodeproj"],
-            cwd=ROOT,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        require(result.returncode == 0,
-                "xcodebuild could not parse WhineLocation.xcodeproj: " + result.stderr.strip(), failures)
-    else:
-        print("xcodebuild unavailable; static iOS baseline only.")
+    check_xcodebuild_project(failures)
 
     if failures:
         for failure in failures:
