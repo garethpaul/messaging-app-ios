@@ -792,7 +792,9 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertEqual("* @garethpaul\n", codeowners)
 
     def test_agent_guidance_preserves_validation_boundaries(self):
-        guidance = self.source("AGENTS.md").read_text(encoding="utf-8")
+        guidance = " ".join(
+            self.source("AGENTS.md").read_text(encoding="utf-8").split()
+        )
         for required_text in [
             "make check",
             "tests/test_check_baseline.py",

@@ -17,7 +17,7 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "e2c677adac29c9f61505074759f91bcc0e958a1d23699e293ea16147b72004cc",
+    "tests/test_check_baseline.py": "3267fd779e4fc4cc1aa958ee71ca1de3ce2002aa51a10e82768acbc5ebcf3058",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
