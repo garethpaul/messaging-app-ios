@@ -11,6 +11,9 @@ import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
+VALIDATION_ROOT_HASH = openssl_sha256(
+    (ROOT / "scripts/verify-validation-chain.py").read_bytes()
+).hexdigest()
 OLD_SERVICE_CREDENTIAL_SHA256 = {
     "3f8cfdba97b73400e169aecfac5540370308e17795fdc141ebf7f97257bb3338",
     "dc49243b9c92562f572f4cf215d9bfafbd081fb4cec327ec9f074320aba5ac19",
@@ -29,11 +32,6 @@ PROTECTED_CONTRACT_HASHES = {
         "c81e4a8c14e87e445f0c8a056af182b7d6923df91ef3a4ea0f9ee7a48e164441",
     "WhineLocation/ServiceKeys.xcconfig.example":
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
-    ".github/workflows/check.yml":
-        "405c3ea5122dd20fb41d06ebe3f285a091c5f2951b618041089e7f7c39731bc4",
-    "scripts/verify-validation-chain.py": "2627400b26522bcd2b17d56a93259f65fbc5a8f916739d0822e6ebae2b18279f",
-    "scripts/run-isolated-tests.py": "e084395a52183d222935ce66ce93ece97c71ba1255814d1d9fb999d3644814aa",
-    "tests/test_check_baseline.py": "8e51e1b13766517b9ae5dfeba9a00e68e7f9aa0f432a7a2705aac5f5e53b7cbf",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -48,29 +46,67 @@ EXPECTED_XCODE_GRAPH_FILES = [
     "WhineLocation.xcworkspace/contents.xcworkspacedata",
     "WhineLocation/ServiceKeys.xcconfig.example",
 ]
-EXPECTED_MAKEFILE = '''ifneq ($(origin MAKEFILE_LIST),file)
+EXPECTED_MAKEFILE = '''.PHONY: __repository-make-authority build check lint test
+.SECONDEXPANSION:
+
+override SHELL := /bin/sh
+override .SHELLFLAGS := -c
+ifneq ($(filter command line,$(origin MAKEFLAGS)),)
+$(error MAKEFLAGS must not be overridden for repository verification)
+endif
+override REPOSITORY_MAKE_FIRST_FLAGS := $(firstword $(MAKEFLAGS))
+ifneq ($(filter -%,$(REPOSITORY_MAKE_FIRST_FLAGS)),)
+override REPOSITORY_MAKE_FIRST_FLAGS :=
+endif
+override REPOSITORY_MAKE_SHORT_FLAGS := $(REPOSITORY_MAKE_FIRST_FLAGS) $(filter-out --%,$(filter -%,$(MAKEFLAGS)))
+ifneq ($(findstring n,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring t,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring q,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring i,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(strip $(MAKEFILES)),)
+$(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
+endif
+override MAKEFILES :=
+ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
-override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
+override ROOT := $(shell sed_path=/usr/bin/sed; [ -x "$$sed_path" ] || sed_path=/bin/sed; [ -x "$$sed_path" ] || exit 1; path=$$(/usr/bin/printf '%s' '$(subst ','"'"',$(value MAKEFILE_LIST))' | "$$sed_path" 's/^ //'); [ -f "$$path" ] || exit 1; directory=$${path%/*}; [ "$$directory" != "$$path" ] || directory=.; CDPATH= cd -- "$$directory" && /bin/pwd -P)
+export ROOT
+ifeq ($(strip $(ROOT)),)
+$(error repository Makefile path could not be resolved)
+endif
 
-.PHONY: build check lint test
+build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test: __repository-make-authority
+
+__repository-make-authority::
+\t@:
 
 lint test build: check
 
 check:
-\t/usr/bin/printf '%s  %s\\n' '2627400b26522bcd2b17d56a93259f65fbc5a8f916739d0822e6ebae2b18279f' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/check-baseline.py"
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
-'''
+\t/usr/bin/printf '%s  %s\\n' 'VALIDATION_ROOT_SHA256' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/check-baseline.py"
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
+'''.replace("VALIDATION_ROOT_SHA256", VALIDATION_ROOT_HASH)
 EXPECTED_WORKFLOW_RUNS = [
-    '/usr/bin/printf \'%s  %s\\n\' \'2627400b26522bcd2b17d56a93259f65fbc5a8f916739d0822e6ebae2b18279f\' \'scripts/verify-validation-chain.py\' | /usr/bin/shasum -a 256 -c - && env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean',
-    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json',
-    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json',
-    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py',
-    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json',
+    '/usr/bin/printf \'%s  %s\\n\' \'' + VALIDATION_ROOT_HASH + '\' \'scripts/verify-validation-chain.py\' | /usr/bin/shasum -a 256 -c - && /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/verify-validation-chain.py --require-clean',
+    '/usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json',
+    '/usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json',
+    '/usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/check-baseline.py',
+    '/usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json',
 ]
 
 
@@ -160,7 +196,7 @@ def check_png(relative_path, failures):
 
 def tracked_files():
     result = subprocess.run(
-        ["git", "ls-files"],
+        ["/usr/bin/git", "ls-files"],
         cwd=ROOT,
         check=True,
         text=True,
@@ -1130,9 +1166,9 @@ def main():
             "completed work, and make check verification",
             failures)
 
-    if shutil.which("xcodebuild"):
+    if Path("/usr/bin/xcodebuild").is_file():
         result = subprocess.run(
-            ["xcodebuild", "-list", "-project", "WhineLocation.xcodeproj"],
+            ["/usr/bin/xcodebuild", "-list", "-project", "WhineLocation.xcodeproj"],
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,

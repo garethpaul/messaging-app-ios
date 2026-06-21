@@ -13,8 +13,10 @@ absolute `make -f` workflow failed when the checkout path contained spaces.
    and POSIX `printf`/`sed` normalization.
 2. Preserve `override ROOT` and reject command-line or environment replacement
    of `MAKEFILE_LIST`.
-3. Protect dry-run regressions for every alias against paths containing spaces,
+3. Protect root-resolution regressions against paths containing spaces,
    brackets, and a literal apostrophe within the isolated integrity chain.
+4. Fail closed for literal `$()` paths because GNU Make expands those bytes
+   before exposing the loaded filename through `MAKEFILE_LIST`.
 
 ## Verification
 

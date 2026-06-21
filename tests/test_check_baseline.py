@@ -15,7 +15,7 @@ from unittest import mock
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 CHECKER_PATH = REPOSITORY_ROOT / "scripts/check-baseline.py"
 RUNNER_PATH = REPOSITORY_ROOT / "scripts/run-isolated-tests.py"
-SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+SANITIZED_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 REQUEST = (
     'Alamofire.request(.POST, getInfo("newHometimeUrl"), '
@@ -94,22 +94,60 @@ def make_validation_root_authentication(root):
 
 
 def expected_makefile(root):
-    return '''ifneq ($(origin MAKEFILE_LIST),file)
+    return '''.PHONY: __repository-make-authority build check lint test
+.SECONDEXPANSION:
+
+override SHELL := /bin/sh
+override .SHELLFLAGS := -c
+ifneq ($(filter command line,$(origin MAKEFLAGS)),)
+$(error MAKEFLAGS must not be overridden for repository verification)
+endif
+override REPOSITORY_MAKE_FIRST_FLAGS := $(firstword $(MAKEFLAGS))
+ifneq ($(filter -%,$(REPOSITORY_MAKE_FIRST_FLAGS)),)
+override REPOSITORY_MAKE_FIRST_FLAGS :=
+endif
+override REPOSITORY_MAKE_SHORT_FLAGS := $(REPOSITORY_MAKE_FIRST_FLAGS) $(filter-out --%,$(filter -%,$(MAKEFLAGS)))
+ifneq ($(findstring n,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring t,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring q,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring i,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(strip $(MAKEFILES)),)
+$(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
+endif
+override MAKEFILES :=
+ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
-override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
+override ROOT := $(shell sed_path=/usr/bin/sed; [ -x "$$sed_path" ] || sed_path=/bin/sed; [ -x "$$sed_path" ] || exit 1; path=$$(/usr/bin/printf '%s' '$(subst ','"'"',$(value MAKEFILE_LIST))' | "$$sed_path" 's/^ //'); [ -f "$$path" ] || exit 1; directory=$${path%/*}; [ "$$directory" != "$$path" ] || directory=.; CDPATH= cd -- "$$directory" && /bin/pwd -P)
+export ROOT
+ifeq ($(strip $(ROOT)),)
+$(error repository Makefile path could not be resolved)
+endif
 
-.PHONY: build check lint test
+build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test: __repository-make-authority
+
+__repository-make-authority::
+\t@:
 
 lint test build: check
 
 check:
 ''' + make_validation_root_authentication(root) + '''
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/check-baseline.py"
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/check-baseline.py"
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
 '''
 
 
@@ -132,11 +170,11 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
-      - run: """ + hosted_validation_root_authentication(root) + """ && env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: """ + hosted_validation_root_authentication(root) + """ && /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/verify-validation-chain.py --require-clean
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/check-baseline.py
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json
 """
 
 
@@ -235,31 +273,109 @@ class HomeTimeValidationContractTests(unittest.TestCase):
     def tearDown(self):
         self.temporary_directory.cleanup()
 
-    def test_makefile_preserves_hostile_spaced_checkout_root(self):
-        checkout = self.snapshot_root / "checkout with spaces 'quoted' [hostile]"
+    def test_makefile_preserves_spaced_quoted_checkout_root(self):
         external = self.snapshot_root / "external caller"
+        checkout = self.snapshot_root / "checkout with spaces 'quoted' [hostile]"
         checkout.mkdir()
         external.mkdir()
         (checkout / "Makefile").write_text(EXPECTED_MAKEFILE, encoding="utf-8")
 
-        for target in ("check", "lint", "test", "build"):
-            for extra_arguments in ((), ("ROOT=/tmp/untrusted",), ("-e", "ROOT=/tmp/untrusted")):
-                with self.subTest(target=target, extra_arguments=extra_arguments):
+        for extra_arguments in ((), ("ROOT=/tmp/untrusted",), ("-e", "ROOT=/tmp/untrusted")):
+            with self.subTest(extra_arguments=extra_arguments):
+                result = subprocess.run(
+                    ["make", "-f", str(checkout / "Makefile"),
+                     *extra_arguments, "__repository-make-authority"],
+                    cwd=external,
+                    check=False,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_makefile_literal_dollar_parentheses_path_fails_closed(self):
+        external = self.snapshot_root / "external caller"
+        marker = external / "make-path-executed"
+        checkout = self.snapshot_root / "checkout $(touch make-path-executed)"
+        checkout.mkdir()
+        external.mkdir()
+        (checkout / "Makefile").write_text(EXPECTED_MAKEFILE, encoding="utf-8")
+
+        result = subprocess.run(
+            ["make", "-f", str(checkout / "Makefile"), "check"],
+            cwd=external,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("repository Makefile path could not be resolved", result.stderr)
+        self.assertFalse(marker.exists())
+
+    def test_makefile_rejects_additional_makefiles_before_and_after(self):
+        marker = self.snapshot_root / "extra-makefile-executed"
+        extra = self.snapshot_root / "extra.mk"
+        extra.write_text(
+            "check:\n\t@/usr/bin/touch " + str(marker) + "\n",
+            encoding="utf-8",
+        )
+        makefile = self.snapshot_root / "Makefile"
+
+        for files in ((extra, makefile), (makefile, extra)):
+            for target in ("check", "lint", "test", "build"):
+                marker.unlink(missing_ok=True)
+                with self.subTest(files=files, target=target):
+                    command = ["make"]
+                    for path in files:
+                        command.extend(["-f", str(path)])
+                    command.append(target)
                     result = subprocess.run(
-                        ["make", "--dry-run", "-f", str(checkout / "Makefile"),
-                         *extra_arguments, target],
-                        cwd=external,
-                        check=True,
+                        command,
+                        cwd=self.snapshot_root,
+                        check=False,
                         text=True,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                     )
-                    self.assertLess(
-                        result.stdout.index(str(checkout / "scripts/verify-validation-chain.py")),
-                        result.stdout.index(str(checkout / "scripts/run-isolated-tests.py")),
-                    )
-                    self.assertIn(str(checkout / "scripts/run-isolated-tests.py"), result.stdout)
-                    self.assertNotIn("/tmp/untrusted/", result.stdout)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("repository Makefile", result.stderr)
+                    self.assertFalse(marker.exists())
+
+    def test_makefile_rejects_preloads_and_nonexecuting_modes(self):
+        preload = self.snapshot_root / "preload.mk"
+        preload.write_text("PRELOADED := 1\n", encoding="utf-8")
+        makefile = self.snapshot_root / "Makefile"
+        attacks = [
+            (["make", "-f", str(makefile), "MAKEFLAGS=", "check"], None),
+            (["make", "-n", "-f", str(makefile), "check"], None),
+            (["make", "-t", "-f", str(makefile), "check"], None),
+            (["make", "-q", "-f", str(makefile), "check"], None),
+            (["make", "-i", "-f", str(makefile), "check"], None),
+            (["make", "-f", str(makefile), "check"], {**os.environ, "MAKEFLAGS": "-n"}),
+            (["make", "-f", str(makefile), "check"], {**os.environ, "MAKEFILES": str(preload)}),
+        ]
+        for command, environment in attacks:
+            with self.subTest(command=command, environment=environment):
+                result = subprocess.run(
+                    command,
+                    cwd=self.snapshot_root,
+                    env=environment,
+                    check=False,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                self.assertNotEqual(0, result.returncode)
+
+    def test_validation_commands_use_fixed_system_tools(self):
+        workflow = expected_workflow(REPOSITORY_ROOT)
+        for contract in (EXPECTED_MAKEFILE, workflow):
+            self.assertIn("/usr/bin/env -i", contract)
+            self.assertIn("/usr/bin/python3 -I", contract)
+            self.assertIn('PATH="/usr/bin:/bin:/usr/sbin:/sbin"', contract)
+            self.assertNotIn("PATH=\"/usr/local/bin", contract)
 
     def test_makefile_rejects_makefile_list_injection(self):
         checkout = self.snapshot_root / "checkout with spaces 'quoted' [hostile]"
@@ -271,9 +387,9 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         environment["MAKEFILE_LIST"] = "/tmp/untrusted"
 
         attacks = (
-            (["make", "--dry-run", "-f", str(checkout / "Makefile"),
+            (["make", "-f", str(checkout / "Makefile"),
               "MAKEFILE_LIST=/tmp/untrusted", "check"], None),
-            (["make", "-e", "--dry-run", "-f", str(checkout / "Makefile"), "check"],
+            (["make", "-e", "-f", str(checkout / "Makefile"), "check"],
              environment),
         )
         for command, attack_environment in attacks:
@@ -692,7 +808,7 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def test_checker_rejects_makefile_skipping_tests(self):
         makefile = self.snapshot_root / "Makefile"
-        command = '\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test\n'
+        command = '\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test\n'
         mutation = EXPECTED_MAKEFILE.replace(command, "", 1)
         self.assertNotEqual(EXPECTED_MAKEFILE, mutation)
         makefile.write_text(mutation, encoding="utf-8")
@@ -705,7 +821,7 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def test_checker_rejects_makefile_ignoring_test_failure(self):
         makefile = self.snapshot_root / "Makefile"
-        command = 'python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test'
+        command = '/usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test'
         mutation = EXPECTED_MAKEFILE.replace(command, command + " || true", 1)
         self.assertNotEqual(EXPECTED_MAKEFILE, mutation)
         makefile.write_text(mutation, encoding="utf-8")
@@ -975,7 +1091,7 @@ class HomeTimeValidationContractTests(unittest.TestCase):
     def test_checker_rejects_workflow_make_check_indirection(self):
         workflow = self.snapshot_root / ".github/workflows/check.yml"
         data = workflow.read_text(encoding="utf-8")
-        command = "python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json"
+        command = "/usr/bin/python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json"
         mutation = data.replace(command, "make check", 1)
         self.assertNotEqual(data, mutation)
         workflow.write_text(mutation, encoding="utf-8")
@@ -1059,6 +1175,26 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertNotIn("Messaging app iOS integrity pre passed.", result.stdout)
         self.assertFalse(marker.exists())
         self.assertEqual(hostile_runner, runner.read_text(encoding="utf-8"))
+
+    def test_integrity_rejects_checker_restore_before_execution(self):
+        checker = self.snapshot_root / "scripts/check-baseline.py"
+        original_checker = checker.read_text(encoding="utf-8")
+        marker = self.snapshot_root / "checker-executed"
+        hostile_checker = (
+            "#!/usr/bin/env python3\n"
+            "from pathlib import Path\n"
+            "Path(" + repr(str(marker)) + ").write_text('executed', encoding='utf-8')\n"
+            "Path(__file__).write_text(" + repr(original_checker) + ", encoding='utf-8')\n"
+            "raise SystemExit(0)\n"
+        )
+        checker.write_text(hostile_checker, encoding="utf-8")
+
+        result = self.run_integrity("pre")
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("scripts/check-baseline.py hash mismatch", result.stderr)
+        self.assertFalse(marker.exists())
+        self.assertEqual(hostile_checker, checker.read_text(encoding="utf-8"))
 
     def test_hosted_workflow_authenticates_validation_root_before_execution(self):
         validation_root = self.snapshot_root / "scripts/verify-validation-chain.py"

@@ -106,8 +106,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Testing and Verification
 
 - `make lint`, `make test`, `make build`, and `make check` authenticate
-  `scripts/run-isolated-tests.py` with `scripts/verify-validation-chain.py`
-  before running the isolated pre/test/baseline/post chain. The baseline
+  `scripts/run-isolated-tests.py` with `scripts/verify-validation-chain.py`,
+  then authenticate `scripts/check-baseline.py` before running the isolated
+  pre/test/baseline/post chain. The baseline
   checker verifies project wiring, credential placeholders,
   `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
   Digits login success guard, the new partner user guard, the location share
@@ -118,6 +119,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `make -f /path/to/messaging-app-ios/Makefile check`. This remains supported
   when checkout paths contain spaces or a literal apostrophe. `ROOT` and
   `MAKEFILE_LIST` overrides cannot redirect verification into another tree.
+  Preloaded or additional Makefiles and non-executing/error-ignoring modes are
+  rejected. GNU Make can parse a caller preload before repository rules run,
+  so only the documented single-`-f` invocation is trusted locally. GNU Make
+  expands `$()` inside a `-f` filename before exposing `MAKEFILE_LIST`; such
+  checkout paths are unsupported and fail closed without executing the text.
 - Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout
   and authenticates `scripts/verify-validation-chain.py` with a hardcoded
   SHA-256 digest through `/usr/bin/shasum` before Python can execute it. The

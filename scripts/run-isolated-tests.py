@@ -12,13 +12,16 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATE = Path(tempfile.gettempdir()) / "messaging-ios-integrity-state.json"
-SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+SANITIZED_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
+GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "8e51e1b13766517b9ae5dfeba9a00e68e7f9aa0f432a7a2705aac5f5e53b7cbf",
+    "tests/test_check_baseline.py": "003d848589fe69a40967ad6babcb39abbe3fa5c149110b245c29946a45d7886d",
 }
 EXPECTED_PROTECTED_HASHES = {
+    "scripts/check-baseline.py":
+        "3b5ff2be3222459ff7ffc6678cd23a63cdd0ed219dac0994204018414a323e3b",
     "WhineLocation/HomeTimeViewController.swift":
         "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
     "WhineLocation/Base.lproj/Main.storyboard":
@@ -74,22 +77,60 @@ def make_validation_root_authentication():
 
 
 def expected_makefile():
-    return '''ifneq ($(origin MAKEFILE_LIST),file)
+    return '''.PHONY: __repository-make-authority build check lint test
+.SECONDEXPANSION:
+
+override SHELL := /bin/sh
+override .SHELLFLAGS := -c
+ifneq ($(filter command line,$(origin MAKEFLAGS)),)
+$(error MAKEFLAGS must not be overridden for repository verification)
+endif
+override REPOSITORY_MAKE_FIRST_FLAGS := $(firstword $(MAKEFLAGS))
+ifneq ($(filter -%,$(REPOSITORY_MAKE_FIRST_FLAGS)),)
+override REPOSITORY_MAKE_FIRST_FLAGS :=
+endif
+override REPOSITORY_MAKE_SHORT_FLAGS := $(REPOSITORY_MAKE_FIRST_FLAGS) $(filter-out --%,$(filter -%,$(MAKEFLAGS)))
+ifneq ($(findstring n,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring t,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring q,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(findstring i,$(REPOSITORY_MAKE_SHORT_FLAGS)),)
+$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)
+endif
+ifneq ($(strip $(MAKEFILES)),)
+$(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
+endif
+override MAKEFILES :=
+ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
-override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
+override ROOT := $(shell sed_path=/usr/bin/sed; [ -x "$$sed_path" ] || sed_path=/bin/sed; [ -x "$$sed_path" ] || exit 1; path=$$(/usr/bin/printf '%s' '$(subst ','"'"',$(value MAKEFILE_LIST))' | "$$sed_path" 's/^ //'); [ -f "$$path" ] || exit 1; directory=$${path%/*}; [ "$$directory" != "$$path" ] || directory=.; CDPATH= cd -- "$$directory" && /bin/pwd -P)
+export ROOT
+ifeq ($(strip $(ROOT)),)
+$(error repository Makefile path could not be resolved)
+endif
 
-.PHONY: build check lint test
+build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test: __repository-make-authority
+
+__repository-make-authority::
+\t@:
 
 lint test build: check
 
 check:
 ''' + make_validation_root_authentication() + '''
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/check-baseline.py"
-\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/check-baseline.py"
+\t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
 '''
 
 
@@ -112,17 +153,17 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
-      - run: """ + hosted_validation_root_authentication() + """ && env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py
-      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: """ + hosted_validation_root_authentication() + """ && /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/verify-validation-chain.py --require-clean
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/check-baseline.py
+      - run: /usr/bin/env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json
 """
 
 
 def git_output(*arguments):
     return subprocess.run(
-        ["git", *arguments],
+        [GIT, *arguments],
         cwd=ROOT,
         check=True,
         text=True,
@@ -241,10 +282,10 @@ def run_copied_tests():
         repository_copy = temporary_root / "repository"
         repository_copy.mkdir()
         copy_candidate_tree(repository_copy)
-        subprocess.run(["git", "init", "--quiet"], cwd=repository_copy, check=True)
-        subprocess.run(["git", "add", "--all"], cwd=repository_copy, check=True)
+        subprocess.run([GIT, "init", "--quiet"], cwd=repository_copy, check=True)
+        subprocess.run([GIT, "add", "--all"], cwd=repository_copy, check=True)
         subprocess.run(
-            ["git", "-c", "user.name=validation", "-c", "user.email=validation@example.invalid", "commit", "--quiet", "-m", "snapshot"],
+            [GIT, "-c", "user.name=validation", "-c", "user.email=validation@example.invalid", "commit", "--quiet", "-m", "snapshot"],
             cwd=repository_copy,
             check=True,
         )
