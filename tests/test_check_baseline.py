@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -252,6 +253,16 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
         subprocess.run(["git", "init", "--quiet"], cwd=self.snapshot_root, check=True)
+        subprocess.run(
+            ["git", "config", "gc.auto", "0"],
+            cwd=self.snapshot_root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "maintenance.auto", "false"],
+            cwd=self.snapshot_root,
+            check=True,
+        )
         subprocess.run(["git", "add", "--all"], cwd=self.snapshot_root, check=True)
         subprocess.run(
             [
@@ -271,7 +282,14 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertNotIn(PARAMETERLESS_VALIDATED_RESPONSE, source)
 
     def tearDown(self):
-        self.temporary_directory.cleanup()
+        for attempt in range(20):
+            try:
+                self.temporary_directory.cleanup()
+                return
+            except OSError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.05)
 
     def test_makefile_preserves_spaced_quoted_checkout_root(self):
         external = self.snapshot_root / "external caller"
@@ -1086,7 +1104,9 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         mutation = data.replace("jobs:\n", "jobs:\n  # MAKEFLAGS=-n bypass\n", 1)
         self.assertNotEqual(data, mutation)
         workflow.write_text(mutation, encoding="utf-8")
-        self.assert_checker_rejects()
+        self.assert_checker_rejects_with(
+            "protected workflow must execute isolated tests and checker directly",
+        )
 
     def test_checker_rejects_workflow_make_check_indirection(self):
         workflow = self.snapshot_root / ".github/workflows/check.yml"
@@ -1095,7 +1115,9 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         mutation = data.replace(command, "make check", 1)
         self.assertNotEqual(data, mutation)
         workflow.write_text(mutation, encoding="utf-8")
-        self.assert_checker_rejects()
+        self.assert_checker_rejects_with(
+            "protected workflow must execute isolated tests and checker directly",
+        )
 
     def test_checker_rejects_workflow_without_validation_root_even_if_hash_is_self_updated(self):
         workflow = self.snapshot_root / ".github/workflows/check.yml"

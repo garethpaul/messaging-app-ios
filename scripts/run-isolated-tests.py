@@ -17,7 +17,7 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "003d848589fe69a40967ad6babcb39abbe3fa5c149110b245c29946a45d7886d",
+    "tests/test_check_baseline.py": "c339102ae41040337dbd203355692e62f3f902d0bc6e99e00f3acabc398a2ac5",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
@@ -283,6 +283,12 @@ def run_copied_tests():
         repository_copy.mkdir()
         copy_candidate_tree(repository_copy)
         subprocess.run([GIT, "init", "--quiet"], cwd=repository_copy, check=True)
+        subprocess.run([GIT, "config", "gc.auto", "0"], cwd=repository_copy, check=True)
+        subprocess.run(
+            [GIT, "config", "maintenance.auto", "false"],
+            cwd=repository_copy,
+            check=True,
+        )
         subprocess.run([GIT, "add", "--all"], cwd=repository_copy, check=True)
         subprocess.run(
             [GIT, "-c", "user.name=validation", "-c", "user.email=validation@example.invalid", "commit", "--quiet", "-m", "snapshot"],
