@@ -105,9 +105,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- `make lint`, `make test`, `make build`, and `make check` run
-  `scripts/check-baseline.py`, which verifies project wiring, credential
-  placeholders, `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
+- `make lint`, `make test`, `make build`, and `make check` authenticate
+  `scripts/run-isolated-tests.py` with `scripts/verify-validation-chain.py`
+  before running the isolated pre/test/baseline/post chain. The baseline
+  checker verifies project wiring, credential placeholders,
+  `ServiceKeys.xcconfig.example`, plist lookup guardrails, the
   Digits login success guard, the new partner user guard, the location share
   user guard, the pulse send throttle, the pulse list user guard, the waiting
   session and response guard, and message read-state guards.
@@ -116,9 +118,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `make -f /path/to/messaging-app-ios/Makefile check`. This remains supported
   when checkout paths contain spaces or a literal apostrophe. `ROOT` and
   `MAKEFILE_LIST` overrides cannot redirect verification into another tree.
-- Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout,
-  runs `make check`, and parses `WhineLocation.xcodeproj` with
-  `xcodebuild -list`. This hosted validation does not install pods, receive
+- Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout
+  and runs the direct verifier-first pre/test/baseline/post commands with
+  clean-tree checks. This hosted validation does not install pods, receive
   service credentials, authenticate users, contact backends, share location,
   process messages, build or sign the app, or launch a simulator.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and destination

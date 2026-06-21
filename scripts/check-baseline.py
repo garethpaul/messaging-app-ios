@@ -30,9 +30,10 @@ PROTECTED_CONTRACT_HASHES = {
     "WhineLocation/ServiceKeys.xcconfig.example":
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
-        "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
-    "scripts/run-isolated-tests.py": "c921b788b87bbda5c7afafe792f38a49d8d37473488bef36d245b2bfaaa4250d",
-    "tests/test_check_baseline.py": "3fbd05ce1ff306d91bd83d611ae29b9a88d7d2c3151d21c1262b53ec33a3447c",
+        "883dd06542e5e21d21fc87885ac198101d78ae9e2e9250255ea9a6190131066c",
+    "scripts/verify-validation-chain.py": "7180f483321e812d6aea8884ab2caeb3001addb4c2028faa7222f4a1b6924abd",
+    "scripts/run-isolated-tests.py": "0594d7c91ae5585153f5732d13a396d5e53226a1683d79914ea0c532c8407a19",
+    "tests/test_check_baseline.py": "e02a11e095ed0990d07f13b7211532d2819b27f718adc84aad146d97443b07bb",
 }
 EXPECTED_INTERFACE_FILES = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -57,11 +58,19 @@ override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(print
 lint test build: check
 
 check:
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/check-baseline.py"
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" post
 '''
+EXPECTED_WORKFLOW_RUNS = [
+    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean',
+    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py pre --require-clean --state /tmp/messaging-ios-integrity-state.json',
+    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py test --require-clean --state /tmp/messaging-ios-integrity-state.json',
+    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/check-baseline.py',
+    'env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/run-isolated-tests.py post --require-clean --state /tmp/messaging-ios-integrity-state.json',
+]
 
 
 def read(relative_path):
@@ -202,6 +211,7 @@ def main():
         "docs/plans/2026-06-21-spaced-makefile-path.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
+        "scripts/verify-validation-chain.py",
         "scripts/run-isolated-tests.py",
         "tests/test_check_baseline.py",
         "WhineLocation/Info.plist",
@@ -294,6 +304,7 @@ def main():
     security = read("SECURITY.md")
     changes = read("CHANGES.md")
     makefile = read("Makefile")
+    validation_root = read("scripts/verify-validation-chain.py")
     read_state_plan = read("docs/plans/2026-06-08-message-read-state-guards.md")
     user_id_plan_path = ROOT / "docs/plans/2026-06-08-digits-user-id-normalization.md"
     user_id_plan = user_id_plan_path.read_text(encoding="utf-8") if user_id_plan_path.exists() else ""
@@ -686,6 +697,15 @@ def main():
 
     require(makefile == EXPECTED_MAKEFILE,
             "Makefile must exactly preserve rooted lint, test, build, and check gates",
+            failures)
+    workflow_runs = re.findall(r"(?m)^\s+- run: (.+)$", workflow)
+    require(workflow_runs == EXPECTED_WORKFLOW_RUNS,
+            "workflow must authenticate the validation chain before isolated runner preflight",
+            failures)
+    require('"scripts/run-isolated-tests.py"' in validation_root and
+            '".github/workflows/check.yml"' in validation_root and
+            '"Makefile"' in validation_root,
+            "validation root must hash the runner, workflow, and Makefile before runner preflight",
             failures)
     require("make -f /path/to/messaging-app-ios/Makefile check" in readme,
             "README must document location-independent Makefile invocation",

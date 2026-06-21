@@ -56,7 +56,7 @@ PROTECTED_HASHES = {
     "WhineLocation/ServiceKeys.xcconfig.example":
         "b05a5fe96d1c70f7d34b1f2ff615fa7675284476620191cb4af157850571a741",
     ".github/workflows/check.yml":
-        "284a336a4bb5a9c4981ef3e1dd7dec5e2e63a3a80c7ed098c709e3a519331350",
+        "883dd06542e5e21d21fc87885ac198101d78ae9e2e9250255ea9a6190131066c",
 }
 INTERFACE_INVENTORY = [
     "WhineLocation/Base.lproj/LaunchScreen.xib",
@@ -81,6 +81,7 @@ override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(print
 lint test build: check
 
 check:
+\tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test
 \tenv -i HOME="$(HOME)" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 python3 -I "$(ROOT)/scripts/check-baseline.py"
@@ -199,6 +200,10 @@ class HomeTimeValidationContractTests(unittest.TestCase):
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                     )
+                    self.assertLess(
+                        result.stdout.index(str(checkout / "scripts/verify-validation-chain.py")),
+                        result.stdout.index(str(checkout / "scripts/run-isolated-tests.py")),
+                    )
                     self.assertIn(str(checkout / "scripts/run-isolated-tests.py"), result.stdout)
                     self.assertNotIn("/tmp/untrusted/", result.stdout)
 
@@ -278,6 +283,18 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             command,
             cwd=self.snapshot_root,
             env=environment,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+    def run_validation_root(self, require_clean=False):
+        command = [sys.executable, "-I", "scripts/verify-validation-chain.py"]
+        if require_clean:
+            command.append("--require-clean")
+        return subprocess.run(
+            command,
+            cwd=self.snapshot_root,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -879,6 +896,29 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         workflow.write_text(mutation, encoding="utf-8")
         self.assert_checker_rejects()
 
+    def test_checker_rejects_workflow_without_validation_root_even_if_hash_is_self_updated(self):
+        workflow = self.snapshot_root / ".github/workflows/check.yml"
+        data = workflow.read_text(encoding="utf-8")
+        validation_command = (
+            '      - run: env -i HOME="$HOME" PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" '
+            "PYTHONDONTWRITEBYTECODE=1 python3 -I scripts/verify-validation-chain.py --require-clean\n"
+        )
+        self.assertIn(validation_command, data)
+        workflow.write_text(data.replace(validation_command, "", 1), encoding="utf-8")
+        new_hash = openssl_sha256(workflow.read_bytes()).hexdigest()
+        checker_path = self.snapshot_root / "scripts/check-baseline.py"
+        checker = checker_path.read_text(encoding="utf-8")
+        checker_path.write_text(
+            checker.replace(PROTECTED_HASHES[".github/workflows/check.yml"], new_hash, 1),
+            encoding="utf-8",
+        )
+        return_code, _, standard_error = self.run_snapshot_checker()
+        self.assertEqual(1, return_code)
+        self.assertIn(
+            "workflow must authenticate the validation chain before isolated runner preflight",
+            standard_error,
+        )
+
     def test_integrity_rejects_added_test_file(self):
         extra = self.snapshot_root / "tests/test_decoy.py"
         extra.write_text("raise SystemExit(0)\n", encoding="utf-8")
@@ -903,6 +943,39 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             or "tests/test_check_baseline.py hash mismatch" in result.stderr,
             result.stderr,
         )
+
+    def test_validation_root_rejects_runner_restore_self_authorization_before_execution(self):
+        runner = self.snapshot_root / "scripts/run-isolated-tests.py"
+        original_runner = runner.read_text(encoding="utf-8")
+        marker = self.snapshot_root / "runner-executed"
+        hostile_runner = (
+            "#!/usr/bin/env python3\n"
+            "from pathlib import Path\n"
+            "import sys\n"
+            "Path(" + repr(str(marker)) + ").write_text('executed', encoding='utf-8')\n"
+            "Path(__file__).write_text(" + repr(original_runner) + ", encoding='utf-8')\n"
+            "print('Messaging app iOS integrity pre passed.')\n"
+            "raise SystemExit(0)\n"
+        )
+        runner.write_text(hostile_runner, encoding="utf-8")
+        subprocess.run(["git", "add", "scripts/run-isolated-tests.py"], cwd=self.snapshot_root, check=True)
+        subprocess.run(
+            [
+                "git", "-c", "user.name=validation",
+                "-c", "user.email=validation@example.invalid",
+                "commit", "--quiet", "-m", "hostile runner",
+            ],
+            cwd=self.snapshot_root,
+            check=True,
+        )
+
+        result = self.run_validation_root(require_clean=True)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("scripts/run-isolated-tests.py hash mismatch", result.stderr)
+        self.assertNotIn("Messaging app iOS integrity pre passed.", result.stdout)
+        self.assertFalse(marker.exists())
+        self.assertEqual(hostile_runner, runner.read_text(encoding="utf-8"))
 
     def test_integrity_rejects_source_laundering_test_before_execution(self):
         source = self.home_time_source()

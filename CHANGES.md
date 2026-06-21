@@ -5,6 +5,8 @@
 - Made absolute external Makefile invocations work when checkout paths contain
   spaces or a literal apostrophe while rejecting `ROOT` and `MAKEFILE_LIST`
   attempts to redirect isolated verification.
+- Added a verifier-first validation gate so `scripts/run-isolated-tests.py` is
+  hashed before it can run isolated preflight, tests, or postflight checks.
 
 ## 2026-06-17
 

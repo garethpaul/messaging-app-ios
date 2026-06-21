@@ -23,7 +23,8 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
 ## Development commands
 
 - Install dependencies: `pod install`
-- Full baseline: `make check`
+- Full baseline: `make check`, which authenticates the isolated test runner
+  before it runs pre/test/baseline/post validation.
 - Local Apple development: `open WhineLocation.xcworkspace`
 - If a command above skips because a platform toolchain is missing, verify on a machine with that SDK before claiming platform behavior is tested.
 
@@ -37,6 +38,9 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
 
 - Test surfaces: `tests/test_check_baseline.py` is the active hosted static contract; `WhineLocationTests/WhineLocationTests.swift` is an orphaned legacy test source and is not wired to an Xcode test target.
 - Start with the narrowest relevant test or Make target, then run `make check` before handing off if the change is not documentation-only.
+- Hosted validation must keep `scripts/verify-validation-chain.py` ahead of
+  `scripts/run-isolated-tests.py`; the runner is not trusted until that
+  verifier has authenticated it.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 
 ## PR / change guidance
