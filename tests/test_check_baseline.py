@@ -249,12 +249,13 @@ class XcodebuildProbeContractTests(unittest.TestCase):
             return original_run(command, *arguments, **keywords)
 
         failures = []
-        with mock.patch.object(
-            CHECKER.subprocess,
-            "run",
-            side_effect=bounded_xcodebuild,
-        ):
-            CHECKER.check_xcodebuild_project(failures)
+        with mock.patch.object(CHECKER.Path, "is_file", return_value=True):
+            with mock.patch.object(
+                CHECKER.subprocess,
+                "run",
+                side_effect=bounded_xcodebuild,
+            ):
+                CHECKER.check_xcodebuild_project(failures)
 
         self.assertTrue(xcodebuild_calls)
         self.assertIn("timeout", xcodebuild_calls[0])
