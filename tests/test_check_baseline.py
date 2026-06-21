@@ -133,16 +133,18 @@ ifeq ($(strip $(ROOT)),)
 $(error repository Makefile path could not be resolved)
 endif
 
-build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
-build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
-build check lint test: __repository-make-authority
+build check lint test:: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test:: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test:: __repository-make-authority
 
 __repository-make-authority::
 \t@:
 
-lint test build: check
+lint:: check
+test:: check
+build:: check
 
-check:
+check::
 ''' + make_validation_root_authentication(root) + '''
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
@@ -222,6 +224,42 @@ def load_runner():
 
 CHECKER = load_checker()
 RUNNER = load_runner()
+
+
+class XcodebuildProbeContractTests(unittest.TestCase):
+    def test_checker_bounds_xcodebuild_project_parse_probe(self):
+        original_run = CHECKER.subprocess.run
+        xcodebuild_calls = []
+
+        def bounded_xcodebuild(command, *arguments, **keywords):
+            if command == [
+                "/usr/bin/xcodebuild", "-list", "-project", "WhineLocation.xcodeproj",
+            ]:
+                xcodebuild_calls.append(keywords)
+                if "timeout" in keywords:
+                    raise subprocess.TimeoutExpired(
+                        command,
+                        keywords["timeout"],
+                        stderr="hung xcodebuild",
+                    )
+                return subprocess.CompletedProcess(command, 0, "", "")
+            return original_run(command, *arguments, **keywords)
+
+        failures = []
+        with mock.patch.object(
+            CHECKER.subprocess,
+            "run",
+            side_effect=bounded_xcodebuild,
+        ):
+            CHECKER.check_xcodebuild_project(failures)
+
+        self.assertTrue(xcodebuild_calls)
+        self.assertIn("timeout", xcodebuild_calls[0])
+        self.assertEqual(1, len(failures))
+        self.assertIn(
+            "xcodebuild timed out parsing WhineLocation.xcodeproj",
+            failures[0],
+        )
 
 
 def send_time_method(source):
@@ -358,7 +396,45 @@ class HomeTimeValidationContractTests(unittest.TestCase):
                         stderr=subprocess.PIPE,
                     )
                     self.assertNotEqual(0, result.returncode)
-                    self.assertIn("repository Makefile", result.stderr)
+                    self.assertTrue(
+                        "repository Makefile" in result.stderr
+                        or "has both : and :: entries" in result.stderr,
+                        result.stderr,
+                    )
+                    self.assertFalse(marker.exists())
+
+    def test_makefile_rejects_later_target_specific_recipe_replacement(self):
+        marker = self.snapshot_root / "later-recipe-executed"
+        later = self.snapshot_root / "later-target-specific.mk"
+        later.write_text(
+            "build check lint test: MAKEFILE_LIST := " + str(self.snapshot_root / "Makefile") + "\n"
+            "build check lint test:\n"
+            "\t@/bin/echo '$@' >> '" + str(marker) + "'\n",
+            encoding="utf-8",
+        )
+        makefile = self.snapshot_root / "Makefile"
+        make_binaries = ["make"]
+        gnu_make_43 = Path(
+            "/var/folders/xw/s4g4vjcd18j8bd9lr4__0k7r0000gn/T/"
+            "gnu-make-4.3.tyZ3BS/install/bin/make"
+        )
+        if gnu_make_43.exists():
+            make_binaries.append(str(gnu_make_43))
+
+        for make_binary in make_binaries:
+            for target in ("check", "lint", "test", "build"):
+                marker.unlink(missing_ok=True)
+                with self.subTest(make_binary=make_binary, target=target):
+                    result = subprocess.run(
+                        [make_binary, "-f", str(makefile), "-f", str(later), target],
+                        cwd=self.snapshot_root,
+                        check=False,
+                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("has both : and :: entries", result.stderr)
                     self.assertFalse(marker.exists())
 
     def test_makefile_rejects_preloads_and_nonexecuting_modes(self):
@@ -424,20 +500,36 @@ class HomeTimeValidationContractTests(unittest.TestCase):
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn("MAKEFILE_LIST must not be overridden", result.stderr)
 
-    def run_checker(self):
+    def xcodebuild_success_run(self, original_run):
+        def run(command, *arguments, **keywords):
+            if command == [
+                "/usr/bin/xcodebuild", "-list", "-project", "WhineLocation.xcodeproj",
+            ]:
+                return subprocess.CompletedProcess(command, 0, "", "")
+            return original_run(command, *arguments, **keywords)
+        return run
+
+    def run_checker(self, subprocess_run=None):
         standard_output = io.StringIO()
         standard_error = io.StringIO()
+        run_side_effect = subprocess_run or self.xcodebuild_success_run(
+            CHECKER.subprocess.run,
+        )
         with mock.patch.object(CHECKER, "ROOT", self.snapshot_root), mock.patch.object(
             CHECKER.shutil,
             "which",
             return_value=None,
+        ), mock.patch.object(
+            CHECKER.subprocess,
+            "run",
+            side_effect=run_side_effect,
         ), contextlib.redirect_stdout(standard_output), contextlib.redirect_stderr(
             standard_error
         ):
             return_code = CHECKER.main()
         return return_code, standard_output.getvalue(), standard_error.getvalue()
 
-    def run_snapshot_checker(self):
+    def run_snapshot_checker(self, subprocess_run=None):
         checker_path = self.snapshot_root / "scripts/check-baseline.py"
         specification = importlib.util.spec_from_file_location(
             "snapshot_messaging_app_ios_check_baseline",
@@ -447,10 +539,17 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         specification.loader.exec_module(checker)
         standard_output = io.StringIO()
         standard_error = io.StringIO()
+        run_side_effect = subprocess_run or self.xcodebuild_success_run(
+            checker.subprocess.run,
+        )
         with mock.patch.object(checker, "ROOT", self.snapshot_root), mock.patch.object(
             checker.shutil,
             "which",
             return_value=None,
+        ), mock.patch.object(
+            checker.subprocess,
+            "run",
+            side_effect=run_side_effect,
         ), contextlib.redirect_stdout(standard_output), contextlib.redirect_stderr(
             standard_error
         ):
@@ -631,6 +730,9 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             "Do not commit Fabric API keys",
             "If a command above skips because a platform toolchain is missing",
             "record the skipped command and why",
+            "later single-colon public recipe replacement",
+            "caller-added double-colon recipes run with caller authority",
+            "documented single-`-f` invocation",
         ]:
             with self.subTest(required_text=required_text):
                 self.assertIn(required_text, guidance)

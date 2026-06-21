@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_HASHES = {
-    "scripts/run-isolated-tests.py": "692d6e5bd98d0e291e2ebfb3969e4243b155409a78c7106519414e8d66874941",
+    "scripts/run-isolated-tests.py": "0731e4e74700313c64462dbb68a8c378fd37e41db60d95514a4e99e0ea2d9e8d",
 }
 
 
@@ -75,16 +75,18 @@ ifeq ($(strip $(ROOT)),)
 $(error repository Makefile path could not be resolved)
 endif
 
-build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
-build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
-build check lint test: __repository-make-authority
+build check lint test:: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test:: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test:: __repository-make-authority
 
 __repository-make-authority::
 \t@:
 
-lint test build: check
+lint:: check
+test:: check
+build:: check
 
-check:
+check::
 ''' + make_validation_root_authentication() + '''
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre

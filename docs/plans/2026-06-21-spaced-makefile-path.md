@@ -17,6 +17,9 @@ absolute `make -f` workflow failed when the checkout path contained spaces.
    brackets, and a literal apostrophe within the isolated integrity chain.
 4. Fail closed for literal `$()` paths because GNU Make expands those bytes
    before exposing the loaded filename through `MAKEFILE_LIST`.
+5. Use double-colon repository public aliases so a later single-colon public
+   recipe replacement conflicts during parsing instead of replacing
+   validation.
 
 ## Verification
 
@@ -24,5 +27,9 @@ absolute `make -f` workflow failed when the checkout path contained spaces.
   gates passed through the pre/test/baseline/post integrity sequence.
 - Hostile `ROOT` values could not redirect commands.
 - Command-line and environment `MAKEFILE_LIST` attacks failed closed.
+- Later target-specific `MAKEFILE_LIST` single-colon public recipe replacement
+  failed closed under GNU Make 3.81 and 4.3. Caller-added double-colon recipes
+  and startup parse-time code remain caller-supplied Make programs outside the
+  local Make trust boundary.
 - No live service credential, API call, location request, Xcode build, signing,
   simulator, or UI flow was used by portable verification.

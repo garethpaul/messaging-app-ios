@@ -17,11 +17,11 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "c339102ae41040337dbd203355692e62f3f902d0bc6e99e00f3acabc398a2ac5",
+    "tests/test_check_baseline.py": "d63360a39f79d1904cc8e9a1a2d86ea82af108e8d4fbc498c3080e01eb47a3b4",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
-        "3b5ff2be3222459ff7ffc6678cd23a63cdd0ed219dac0994204018414a323e3b",
+        "9e6d216eeb8245cc801c73f42a65e93696f6dd22de76ddb51ec705a5c3b2d7de",
     "WhineLocation/HomeTimeViewController.swift":
         "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
     "WhineLocation/Base.lproj/Main.storyboard":
@@ -115,16 +115,18 @@ ifeq ($(strip $(ROOT)),)
 $(error repository Makefile path could not be resolved)
 endif
 
-build check lint test: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
-build check lint test: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
-build check lint test: __repository-make-authority
+build check lint test:: $$(if $$(filter file,$$(origin MAKEFILE_LIST)),,$$(error MAKEFILE_LIST must not be overridden))
+build check lint test:: $$(if $$(shell sed_path=/usr/bin/sed && [ -x "$$$$sed_path" ] || sed_path=/bin/sed && [ -x "$$$$sed_path" ] && path=$$$$(printf '%s' '$$(subst ','"'"',$$(MAKEFILE_LIST))' | "$$$$sed_path" 's/^ //') && [ -f "$$$$path" ] && printf '%s' ok),,$$(error repository Makefile must be loaded alone))
+build check lint test:: __repository-make-authority
 
 __repository-make-authority::
 \t@:
 
-lint test build: check
+lint:: check
+test:: check
+build:: check
 
-check:
+check::
 ''' + make_validation_root_authentication() + '''
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 \t/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre

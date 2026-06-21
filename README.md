@@ -118,12 +118,14 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   checkout's Makefile by absolute path, such as
   `make -f /path/to/messaging-app-ios/Makefile check`. This remains supported
   when checkout paths contain spaces or a literal apostrophe. `ROOT` and
-  `MAKEFILE_LIST` overrides cannot redirect verification into another tree.
-  Preloaded or additional Makefiles and non-executing/error-ignoring modes are
-  rejected. GNU Make can parse a caller preload before repository rules run,
-  so only the documented single-`-f` invocation is trusted locally. GNU Make
-  expands `$()` inside a `-f` filename before exposing `MAKEFILE_LIST`; such
-  checkout paths are unsupported and fail closed without executing the text.
+  `MAKEFILE_LIST` overrides cannot redirect verification into another tree,
+  and later single-colon public recipe replacement fails closed. Caller-supplied
+  Makefiles are programs outside the local trust boundary: GNU Make can parse
+  startup code before repository rules run, and caller-added double-colon recipes
+  can run with caller authority. Only the documented single-`-f`
+  invocation is trusted locally. GNU Make expands `$()` inside a `-f` filename
+  before exposing `MAKEFILE_LIST`; such checkout paths are unsupported and fail
+  closed without executing the text.
 - Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout
   and authenticates `scripts/verify-validation-chain.py` with a hardcoded
   SHA-256 digest through `/usr/bin/shasum` before Python can execute it. The
