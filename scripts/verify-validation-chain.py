@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_HASHES = {
-    "scripts/run-isolated-tests.py": "0731e4e74700313c64462dbb68a8c378fd37e41db60d95514a4e99e0ea2d9e8d",
+    "scripts/run-isolated-tests.py": "9980b0a71fabedab5677bcd7a1b92a98283bbb793111c2c20ee668f873642bae",
 }
 
 
@@ -42,6 +42,9 @@ def expected_makefile():
 
 override SHELL := /bin/sh
 override .SHELLFLAGS := -c
+ifneq ($(origin -*-eval-flags-*-),undefined)
+$(error --eval must not be used for repository verification)
+endif
 ifneq ($(filter command line,$(origin MAKEFLAGS)),)
 $(error MAKEFLAGS must not be overridden for repository verification)
 endif

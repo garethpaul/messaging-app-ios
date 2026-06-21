@@ -100,6 +100,9 @@ def expected_makefile(root):
 
 override SHELL := /bin/sh
 override .SHELLFLAGS := -c
+ifneq ($(origin -*-eval-flags-*-),undefined)
+$(error --eval must not be used for repository verification)
+endif
 ifneq ($(filter command line,$(origin MAKEFLAGS)),)
 $(error MAKEFLAGS must not be overridden for repository verification)
 endif
@@ -462,6 +465,73 @@ class HomeTimeValidationContractTests(unittest.TestCase):
                     stderr=subprocess.PIPE,
                 )
                 self.assertNotEqual(0, result.returncode)
+
+    def test_makefile_rejects_eval_before_target_specific_shell_execution(self):
+        gnu_make_43 = Path(
+            "/var/folders/xw/s4g4vjcd18j8bd9lr4__0k7r0000gn/T/"
+            "gnu-make-4.3.tyZ3BS/install/bin/make"
+        )
+        if not gnu_make_43.exists():
+            self.skipTest("GNU Make with --eval support is unavailable")
+
+        marker = self.snapshot_root / "target-specific-shell-executed"
+        hostile_shell = self.snapshot_root / "hostile-shell"
+        hostile_shell.write_text(
+            "#!/bin/sh\n/usr/bin/touch " + str(marker) + "\nexit 97\n",
+            encoding="utf-8",
+        )
+        hostile_shell.chmod(0o755)
+
+        result = subprocess.run(
+            [
+                str(gnu_make_43),
+                "--eval=check: override SHELL := " + str(hostile_shell),
+                "-f", str(self.snapshot_root / "Makefile"),
+                "check",
+            ],
+            cwd=self.snapshot_root,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("--eval must not be used", result.stderr)
+        self.assertFalse(marker.exists())
+
+    def test_makefile_rejects_eval_before_target_specific_root_redirection(self):
+        gnu_make_43 = Path(
+            "/var/folders/xw/s4g4vjcd18j8bd9lr4__0k7r0000gn/T/"
+            "gnu-make-4.3.tyZ3BS/install/bin/make"
+        )
+        if not gnu_make_43.exists():
+            self.skipTest("GNU Make with --eval support is unavailable")
+
+        decoy_root = self.snapshot_root / "decoy-root"
+        (decoy_root / "scripts").mkdir(parents=True)
+        shutil.copy2(
+            self.snapshot_root / "scripts/verify-validation-chain.py",
+            decoy_root / "scripts/verify-validation-chain.py",
+        )
+
+        result = subprocess.run(
+            [
+                str(gnu_make_43),
+                "--eval=check: override ROOT := " + str(decoy_root),
+                "-f", str(self.snapshot_root / "Makefile"),
+                "check",
+            ],
+            cwd=self.snapshot_root,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("--eval must not be used", result.stderr)
+        self.assertNotIn(str(decoy_root), result.stdout + result.stderr)
 
     def test_validation_commands_use_fixed_system_tools(self):
         workflow = expected_workflow(REPOSITORY_ROOT)

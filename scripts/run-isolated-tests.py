@@ -17,11 +17,11 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "d63360a39f79d1904cc8e9a1a2d86ea82af108e8d4fbc498c3080e01eb47a3b4",
+    "tests/test_check_baseline.py": "e2c677adac29c9f61505074759f91bcc0e958a1d23699e293ea16147b72004cc",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
-        "9e6d216eeb8245cc801c73f42a65e93696f6dd22de76ddb51ec705a5c3b2d7de",
+        "baf50ada046a0743e2c8c8ea7a0af3bf9292d95e9a652379f722391095f6c438",
     "WhineLocation/HomeTimeViewController.swift":
         "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
     "WhineLocation/Base.lproj/Main.storyboard":
@@ -82,6 +82,9 @@ def expected_makefile():
 
 override SHELL := /bin/sh
 override .SHELLFLAGS := -c
+ifneq ($(origin -*-eval-flags-*-),undefined)
+$(error --eval must not be used for repository verification)
+endif
 ifneq ($(filter command line,$(origin MAKEFLAGS)),)
 $(error MAKEFLAGS must not be overridden for repository verification)
 endif

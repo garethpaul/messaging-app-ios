@@ -3,6 +3,9 @@
 
 override SHELL := /bin/sh
 override .SHELLFLAGS := -c
+ifneq ($(origin -*-eval-flags-*-),undefined)
+$(error --eval must not be used for repository verification)
+endif
 ifneq ($(filter command line,$(origin MAKEFLAGS)),)
 $(error MAKEFLAGS must not be overridden for repository verification)
 endif
@@ -48,7 +51,7 @@ test:: check
 build:: check
 
 check::
-	/usr/bin/printf '%s  %s\n' '0066cee50cd86fdef119f1d7f5628e017de232ab26393521b3a9552efd402b77' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
+	/usr/bin/printf '%s  %s\n' 'b3a9fc49aeccb731ed5f3e5057f08fc7623195e151baad4a65be958108094a8f' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
 	/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 	/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
 	/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test

@@ -14,6 +14,8 @@
   caller-added double-colon recipes as outside the local Make trust boundary.
   Fixed validation tools to system paths and authenticated the static checker
   before the isolated runner imports or executes it.
+- Rejected GNU Make `--eval` during parsing before target-specific variables can
+  replace the authenticated validation root or execute a caller-selected shell.
 
 ## 2026-06-17
 

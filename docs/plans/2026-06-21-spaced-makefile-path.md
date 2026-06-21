@@ -31,5 +31,7 @@ absolute `make -f` workflow failed when the checkout path contained spaces.
   failed closed under GNU Make 3.81 and 4.3. Caller-added double-colon recipes
   and startup parse-time code remain caller-supplied Make programs outside the
   local Make trust boundary.
+- GNU Make `--eval` fails during parsing before target-specific variables can
+  replace the authenticated root or recipe shell.
 - No live service credential, API call, location request, Xcode build, signing,
   simulator, or UI flow was used by portable verification.

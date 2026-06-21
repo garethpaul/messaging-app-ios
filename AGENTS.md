@@ -44,7 +44,8 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
   hardcoded `/usr/bin/shasum` digest check immediately before executing the
   verifier; changing that first command changes the workflow trust boundary.
 - Repository Make targets reject non-executing/error-ignoring modes, protected
-  metadata overrides, and later single-colon public recipe replacement. GNU
+  metadata overrides, GNU Make `--eval` definitions, and later single-colon
+  public recipe replacement. GNU
   Make may parse caller startup code before this repository can reject it, and
   caller-added double-colon recipes run with caller authority, so only the
   documented single-`-f` invocation is inside the local Make trust boundary.

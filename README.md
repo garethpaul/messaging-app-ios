@@ -117,9 +117,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The Make gates are location-independent. From another directory, pass the
   checkout's Makefile by absolute path, such as
   `make -f /path/to/messaging-app-ios/Makefile check`. This remains supported
-  when checkout paths contain spaces or a literal apostrophe. `ROOT` and
-  `MAKEFILE_LIST` overrides cannot redirect verification into another tree,
-  and later single-colon public recipe replacement fails closed. Caller-supplied
+  when checkout paths contain spaces or a literal apostrophe. `ROOT`,
+  `MAKEFILE_LIST`, and GNU Make `--eval` definitions cannot redirect
+  verification into another tree or replace its recipe shell, and later single-colon public recipe replacement fails closed.
+  Caller-supplied
   Makefiles are programs outside the local trust boundary: GNU Make can parse
   startup code before repository rules run, and caller-added double-colon recipes
   can run with caller authority. Only the documented single-`-f`
