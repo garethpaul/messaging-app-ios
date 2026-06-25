@@ -49,6 +49,10 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
   Make may parse caller startup code before this repository can reject it, and
   caller-added double-colon recipes run with caller authority, so only the
   documented single-`-f` invocation is inside the local Make trust boundary.
+- On GNU Make 4+, repository Makefiles must reject literal `$(` and `${` path
+  text before `MAKEFILE_LIST` is passed through shell-backed root resolution.
+  GNU Make 3.81 expands such text before repository rules can inspect it, so
+  validation must not overstate protection on that version.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 
 ## PR / change guidance

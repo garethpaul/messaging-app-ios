@@ -17,11 +17,11 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "93ec7d5c3bcbc48a6b42c7251aa9a64bc1bdb0f93fb2ead64eef983b1346f717",
+    "tests/test_check_baseline.py": "0411ac5b81ff1c3064367e87cd4c8ba9b3a500f7722bf4f9568d05cfeb9e79db",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
-        "baf50ada046a0743e2c8c8ea7a0af3bf9292d95e9a652379f722391095f6c438",
+        "10fb8ca2b1a1767f8a6679fb79d6d99712a354e4d81234ee555010d28cf9d73d",
     "WhineLocation/HomeTimeViewController.swift":
         "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
     "WhineLocation/Base.lproj/Main.storyboard":
@@ -109,6 +109,15 @@ ifneq ($(strip $(MAKEFILES)),)
 $(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
 endif
 override MAKEFILES :=
+override REPOSITORY_MAKE_DOLLAR := $$
+override REPOSITORY_MAKE_OPEN := (
+override REPOSITORY_MAKE_BRACE := {
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_OPEN),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_BRACE),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
 ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif

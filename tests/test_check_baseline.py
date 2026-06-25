@@ -76,6 +76,20 @@ def sha256_file(path):
     return openssl_sha256(path.read_bytes()).hexdigest()
 
 
+def make_preserves_literal_makefile_list(make_binary="make"):
+    result = subprocess.run(
+        [make_binary, "--version"],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0 or not result.stdout.startswith("GNU Make "):
+        return False
+    version = result.stdout.splitlines()[0].split()[-1]
+    return int(version.split(".", 1)[0]) >= 4
+
+
 def validation_root_hash(root):
     return sha256_file(root / VALIDATION_ROOT_PATH)
 
@@ -127,6 +141,15 @@ ifneq ($(strip $(MAKEFILES)),)
 $(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
 endif
 override MAKEFILES :=
+override REPOSITORY_MAKE_DOLLAR := $$
+override REPOSITORY_MAKE_OPEN := (
+override REPOSITORY_MAKE_BRACE := {
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_OPEN),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_BRACE),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
 ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
@@ -354,9 +377,12 @@ class HomeTimeValidationContractTests(unittest.TestCase):
                 self.assertEqual(0, result.returncode, result.stderr)
 
     def test_makefile_literal_dollar_parentheses_path_fails_closed(self):
+        if not make_preserves_literal_makefile_list():
+            self.skipTest("GNU Make 4+ is required to inspect literal Makefile path syntax")
+
         external = self.snapshot_root / "external caller"
         marker = external / "make-path-executed"
-        checkout = self.snapshot_root / "checkout $(touch make-path-executed)"
+        checkout = self.snapshot_root / "checkout $(shell touch make-path-executed)"
         checkout.mkdir()
         external.mkdir()
         (checkout / "Makefile").write_text(EXPECTED_MAKEFILE, encoding="utf-8")
@@ -371,8 +397,30 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         )
 
         self.assertNotEqual(0, result.returncode)
-        self.assertIn("repository Makefile path could not be resolved", result.stderr)
+        self.assertIn("repository Makefile path must not contain Make syntax", result.stderr)
         self.assertFalse(marker.exists())
+
+    def test_makefile_literal_dollar_brace_path_fails_closed(self):
+        if not make_preserves_literal_makefile_list():
+            self.skipTest("GNU Make 4+ is required to inspect literal Makefile path syntax")
+
+        external = self.snapshot_root / "external brace caller"
+        checkout = self.snapshot_root / "checkout ${untrusted-make-variable}"
+        checkout.mkdir()
+        external.mkdir()
+        (checkout / "Makefile").write_text(EXPECTED_MAKEFILE, encoding="utf-8")
+
+        result = subprocess.run(
+            ["make", "-f", str(checkout / "Makefile"), "check"],
+            cwd=external,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("repository Makefile path must not contain Make syntax", result.stderr)
 
     def test_makefile_rejects_additional_makefiles_before_and_after(self):
         marker = self.snapshot_root / "extra-makefile-executed"
