@@ -1,5 +1,22 @@
 # Changes
 
+## 2026-06-25 10:20 PDT
+
+- **Priority:** P1 validation portability and trust-boundary accuracy.
+- **Summary:** Corrected the Makefile-path capability gate to require GNU Make
+  4.3 instead of treating every GNU Make 4 release as equivalent.
+- **Work:** Added a version-boundary regression covering GNU Make 3.81, 4.2,
+  4.3, and 4.4; updated contributor and security guidance to match the tested
+  behavior.
+- **Finding:** GNU Make 4.2.1 expands literal `$(` and `${` path syntax before
+  repository rules can inspect `MAKEFILE_LIST`, while the original fix was
+  validated on GNU Make 4.3.
+- **Validation:** The 4.2 host now skips only the two unenforceable path
+  assertions while retaining the explicit 4.3+ contract; the authenticated
+  validation chain and hosted checks must pass before merge.
+- **Blockers:** Native app behavior still requires compatible macOS/Xcode and
+  retired Digits/Parse/Fabric services.
+
 ## 2026-06-25 09:23 PDT
 
 - **Priority:** P1 stale write-response and navigation correctness.
@@ -46,8 +63,9 @@
   and executed attacker-controlled text before the later shasum failure.
 - **Hosted follow-up:** The first macOS runs exposed that Apple's GNU Make 3.81
   expands `MAKEFILE_LIST` path syntax before any repository rule can inspect
-  it. The regression now uses a real `$(shell ...)` payload on GNU Make 4+ and
-  skips that unenforceable assertion on 3.81; guidance documents the boundary.
+  it. The regression now uses a real `$(shell ...)` payload on GNU Make 4.3+
+  and skips that unenforceable assertion on 3.81 and 4.2; guidance documents
+  the boundary.
 - **Blockers:** Native app behavior still requires compatible macOS/Xcode and
   retired Digits/Parse/Fabric services.
 - **Deferred work:** Home-time request ownership was saved outside the tree and
