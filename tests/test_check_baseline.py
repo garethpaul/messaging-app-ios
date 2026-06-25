@@ -19,12 +19,12 @@ RUNNER_PATH = REPOSITORY_ROOT / "scripts/run-isolated-tests.py"
 SANITIZED_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 REQUEST = (
-    'Alamofire.request(.POST, getInfo("newHometimeUrl"), '
+    'let request = Alamofire.request(.POST, getInfo("newHometimeUrl"), '
     'parameters: ["userId": userId, "homeTime": dateString])'
 )
-PARAMETERLESS_VALIDATED_RESPONSE = REQUEST + ".validate().responseJSON"
-STATUS_VALIDATED_RESPONSE = REQUEST + ".validate(statusCode: 200..<300).responseJSON"
-UNVALIDATED_RESPONSE = REQUEST + ".responseJSON"
+PARAMETERLESS_VALIDATED_RESPONSE = REQUEST + ".validate()"
+STATUS_VALIDATED_RESPONSE = REQUEST + ".validate(statusCode: 200..<300)"
+UNVALIDATED_RESPONSE = REQUEST
 PARTNER_REQUEST = (
     'let request = Alamofire.request(.POST, getInfo("newpartnerUrl"), '
     'parameters: ["userId": userId, "partner": partner, "userPhoneNumber": userPhoneNumber])'
@@ -47,7 +47,7 @@ WAITING_REQUEST = (
 WAITING_VALIDATED_REQUEST = WAITING_REQUEST + ".validate(statusCode: 200..<300)"
 PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
-        "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
+        "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
     "WhineLocation/Base.lproj/Main.storyboard":
         "a621749ce902822ff3b7cda43b33619b815b22efdb25bac35fa30677b845bfb5",
     "WhineLocation.xcodeproj/project.pbxproj":
@@ -209,20 +209,43 @@ jobs:
 
 EXPECTED_MAKEFILE = expected_makefile(REPOSITORY_ROOT)
 CANONICAL_SEND_TIME_METHOD = '''    @IBAction func sendTime(sender: AnyObject) {
+        homeTimeRequest?.cancel()
+        homeTimeRequest = nil
+
+        guard isHomeTimeViewActive else {
+            return
+        }
+
         guard let userId = currentDigitsUserID() else {
             return
         }
+
+        let requestGeneration = homeTimeViewGeneration
 
         let dateFormatter = NSDateFormatter()
         dateFormatter.dateFormat = "hh:mm a" //format style. Browse online to get a format that fits your needs.
         let dateString = dateFormatter.stringFromDate(uiPicker.date)
 
-        Alamofire.request(.POST, getInfo("newHometimeUrl"), parameters: ["userId": userId, "homeTime": dateString]).validate(statusCode: 200..<300).responseJSON { (req, res, json, error) in
-            guard error == nil else {
-                return
-            }
+        let request = Alamofire.request(.POST, getInfo("newHometimeUrl"), parameters: ["userId": userId, "homeTime": dateString]).validate(statusCode: 200..<300)
+        homeTimeRequest = request
+        request.responseJSON { (req, res, json, error) in
+            dispatch_async(dispatch_get_main_queue()) {
+                guard self.homeTimeRequest === request else {
+                    return
+                }
 
-            self.performSegueWithIdentifier("presentNav", sender: self)
+                self.homeTimeRequest = nil
+                guard self.isHomeTimeViewActive &&
+                    requestGeneration == self.homeTimeViewGeneration else {
+                        return
+                }
+
+                guard error == nil else {
+                    return
+                }
+
+                self.performSegueWithIdentifier("presentNav", sender: self)
+            }
         }
     }
 '''
@@ -826,6 +849,66 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertEqual(0, return_code, standard_error)
         self.assertEqual([], self.independent_contract_failures())
 
+    def test_checker_rejects_home_time_disappearance_without_cancellation(self):
+        self.replace_source(
+            "WhineLocation/HomeTimeViewController.swift",
+            "        homeTimeRequest?.cancel()\n        homeTimeRequest = nil\n    }\n\n    override func viewDidLoad",
+            "        homeTimeRequest = nil\n    }\n\n    override func viewDidLoad",
+        )
+        self.assert_checker_rejects_with(
+            "home time disappearance must invalidate, cancel, and clear request ownership"
+        )
+
+    def test_checker_rejects_home_time_cancellation_moved_into_view_did_load(self):
+        self.replace_source(
+            "WhineLocation/HomeTimeViewController.swift",
+            '''        homeTimeRequest?.cancel()
+        homeTimeRequest = nil
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()''',
+            '''    }
+
+    override func viewDidLoad() {
+        homeTimeRequest?.cancel()
+        homeTimeRequest = nil
+        super.viewDidLoad()''',
+        )
+        self.assert_checker_rejects_with(
+            "home time disappearance must invalidate, cancel, and clear request ownership"
+        )
+
+    def test_checker_rejects_home_time_submission_while_inactive(self):
+        replacement = CANONICAL_SEND_TIME_METHOD.replace(
+            '''        guard isHomeTimeViewActive else {
+            return
+        }
+
+''',
+            "",
+            1,
+        )
+        self.replace_send_time_method(replacement)
+        self.assert_checker_rejects_with(
+            "home time submission must replace, retain, and identity-bind one visible appearance request"
+        )
+
+    def test_checker_rejects_home_time_callback_without_request_identity(self):
+        replacement = CANONICAL_SEND_TIME_METHOD.replace(
+            '''                guard self.homeTimeRequest === request else {
+                    return
+                }
+
+''',
+            "",
+            1,
+        )
+        self.replace_send_time_method(replacement)
+        self.assert_checker_rejects_with(
+            "home time submission must replace, retain, and identity-bind one visible appearance request"
+        )
+
     def test_credential_fingerprint_detection_uses_non_reversible_digest(self):
         candidate = "a" * 40
         fingerprint = openssl_sha256(candidate.encode("ascii")).hexdigest()
@@ -1241,14 +1324,26 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def test_checker_rejects_navigation_after_empty_callback(self):
         replacement = CANONICAL_SEND_TIME_METHOD.replace(
-            '''.responseJSON { (req, res, json, error) in
-            guard error == nil else {
-                return
-            }
+            '''request.responseJSON { (req, res, json, error) in
+            dispatch_async(dispatch_get_main_queue()) {
+                guard self.homeTimeRequest === request else {
+                    return
+                }
 
-            self.performSegueWithIdentifier("presentNav", sender: self)
+                self.homeTimeRequest = nil
+                guard self.isHomeTimeViewActive &&
+                    requestGeneration == self.homeTimeViewGeneration else {
+                        return
+                }
+
+                guard error == nil else {
+                    return
+                }
+
+                self.performSegueWithIdentifier("presentNav", sender: self)
+            }
         }''',
-            '''.responseJSON { (req, res, json, error) in
+            '''request.responseJSON { (req, res, json, error) in
         }
 
         let error: NSError? = nil
@@ -1485,8 +1580,8 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         source = self.home_time_source()
         canonical = source.read_bytes()
         source.write_bytes(canonical.replace(
-            b".validate(statusCode: 200..<300).responseJSON",
-            b".responseJSON",
+            b".validate(statusCode: 200..<300)",
+            b"",
             1,
         ))
         test_file = self.snapshot_root / "tests/test_check_baseline.py"

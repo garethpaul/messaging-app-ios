@@ -1,5 +1,31 @@
 # Changes
 
+## 2026-06-25 09:23 PDT
+
+- **Priority:** P1 stale write-response and navigation correctness.
+- **Summary:** Bound home-time submission callbacks to one retained request and
+  the controller appearance that created it.
+- **Work:** Added appearance activity/generation state, replacement and
+  disappearance cancellation, exact request identity cleanup, main-queue
+  publication, and success-only navigation.
+- **Threads:** No delegated threads were used.
+- **Files:** Updated the home-time controller, static and mutation contracts,
+  authenticated validation hashes, guidance, and a completed plan.
+- **Validation:** The ownership contract failed before production changes;
+  focused current-source and hostile disappearance/activity/identity mutations,
+  all 83 Python tests, root and external-directory `make check`, direct baseline,
+  validation-root authentication, Python compilation, and `git diff --check`
+  pass. Two unrelated GNU Make `--eval` cases skip locally; hosted validation
+  remains the merge gate.
+- **Review fix:** Codex identified that the disappearance scan extended through
+  `viewDidLoad`. A red mutation proved cancellation could be moved there as a
+  decoy; the scan now stops at the next override and rejects that variant.
+- **Findings:** The previous callback could navigate after replacement or
+  disappearance because no transport, request identity, or appearance state
+  was retained.
+- **Blockers:** Runtime behavior still requires compatible macOS/Xcode and the
+  retired Digits/Parse/Fabric service stack.
+
 ## 2026-06-25 09:08 PDT
 
 - **Priority:** P1 local validation command-execution boundary.
@@ -24,8 +50,8 @@
   skips that unenforceable assertion on 3.81; guidance documents the boundary.
 - **Blockers:** Native app behavior still requires compatible macOS/Xcode and
   retired Digits/Parse/Fabric services.
-- **Failed attempt:** Home-time request ownership work was saved outside the
-  tree and deferred when this higher-priority validation flaw reproduced.
+- **Deferred work:** Home-time request ownership was saved outside the tree and
+  resumed after this higher-priority validation flaw merged.
 - **Next action:** Review the exact PR head and merge only after hosted checks
   pass.
 

@@ -22,7 +22,7 @@ OLD_SERVICE_CREDENTIAL_SHA256 = {
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PROTECTED_CONTRACT_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
-        "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
+        "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
     "WhineLocation/Base.lproj/Main.storyboard":
         "a621749ce902822ff3b7cda43b33619b815b22efdb25bac35fa30677b845bfb5",
     "WhineLocation.xcodeproj/project.pbxproj":
@@ -478,6 +478,57 @@ def main():
             failures)
     require("else {\n                self.performSegueWithIdentifier(\"NewPartner\"" not in login,
             "Digits login must not segue into the partner flow after failed authentication",
+            failures)
+    home_appear_start = home_time.find("override func viewWillAppear")
+    home_appear_end = home_time.find("override func viewWillDisappear", home_appear_start)
+    home_disappear_end = home_time.find("override func viewDidLoad", home_appear_end)
+    home_appear = home_time[home_appear_start:home_appear_end]
+    home_disappear = home_time[home_appear_end:home_disappear_end]
+    require("private var homeTimeRequest: Request?" in home_time and
+            "private var isHomeTimeViewActive = false" in home_time and
+            "private var homeTimeViewGeneration = 0" in home_time and
+            "isHomeTimeViewActive = true" in home_appear and
+            "homeTimeViewGeneration += 1" in home_appear,
+            "home time flow must retain requests and activate a new appearance generation",
+            failures)
+    home_disappear_inactive = home_disappear.find("isHomeTimeViewActive = false")
+    home_disappear_generation = home_disappear.find("homeTimeViewGeneration += 1")
+    home_disappear_cancel = home_disappear.find("homeTimeRequest?.cancel()")
+    home_disappear_clear = home_disappear.find("homeTimeRequest = nil")
+    require(-1 not in (home_disappear_inactive, home_disappear_generation,
+                       home_disappear_cancel, home_disappear_clear) and
+            home_disappear_inactive < home_disappear_generation <
+            home_disappear_cancel < home_disappear_clear,
+            "home time disappearance must invalidate, cancel, and clear request ownership",
+            failures)
+    home_action_start = home_time.find("@IBAction func sendTime")
+    home_action_end = home_time.find("override func prepareForSegue", home_action_start)
+    home_action = home_time[home_action_start:home_action_end]
+    home_replace_cancel = home_action.find("homeTimeRequest?.cancel()")
+    home_replace_clear = home_action.find("homeTimeRequest = nil")
+    home_activity_entry = home_action.find("guard isHomeTimeViewActive else", home_replace_clear)
+    home_generation_capture = home_action.find("let requestGeneration = homeTimeViewGeneration")
+    home_request_create = home_action.find("let request = Alamofire.request")
+    home_status_validation = home_action.find(".validate(statusCode: 200..<300)", home_request_create)
+    home_request_retain = home_action.find("homeTimeRequest = request")
+    home_response = home_action.find("request.responseJSON")
+    home_main_queue = home_action.find("dispatch_async(dispatch_get_main_queue())", home_response)
+    home_identity = home_action.find("guard self.homeTimeRequest === request", home_main_queue)
+    home_owned_clear = home_action.find("self.homeTimeRequest = nil", home_identity)
+    home_activity = home_action.find("guard self.isHomeTimeViewActive &&", home_owned_clear)
+    home_generation = home_action.find("requestGeneration == self.homeTimeViewGeneration", home_activity)
+    home_success = home_action.find("error == nil else", home_generation)
+    home_segue = home_action.find('self.performSegueWithIdentifier("presentNav", sender: self)', home_success)
+    require(-1 not in (home_replace_cancel, home_replace_clear, home_activity_entry,
+                       home_generation_capture, home_request_create, home_status_validation,
+                       home_request_retain, home_response, home_main_queue, home_identity,
+                       home_owned_clear, home_activity, home_generation, home_success,
+                       home_segue) and
+            home_replace_cancel < home_replace_clear < home_activity_entry <
+            home_generation_capture < home_request_create < home_status_validation <
+            home_request_retain < home_response < home_main_queue < home_identity <
+            home_owned_clear < home_activity < home_generation < home_success < home_segue,
+            "home time submission must replace, retain, and identity-bind one visible appearance request",
             failures)
     require("func normalizedPartnerNumber(partnerNumber: String?) -> String?" in new_partner and
             "trimmedPartnerNumber.characters.count == 0" in new_partner,
