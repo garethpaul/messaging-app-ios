@@ -1,5 +1,34 @@
 # Changes
 
+## 2026-06-25 09:08 PDT
+
+- **Priority:** P1 local validation command-execution boundary.
+- **Summary:** Rejected literal Make syntax in Makefile paths before trusted
+  root resolution can evaluate it.
+- **Work:** Added pre-expansion `$(` and `${` guards to the live Makefile and
+  every independently generated Makefile contract, plus hostile path tests.
+- **Threads:** No delegated threads were used.
+- **Files:** Updated Make authority, checker/test/runner/verifier templates,
+  hosted authentication hashes, project guidance, and a completed plan.
+- **Validation:** The existing `$()` regression failed on untouched `master`
+  and created its marker; focused `$()`/`${` tests, the 80-test suite, hostile
+  external marker probe, root and external-directory `make check`, validation
+  chain pre/post checks, and `git diff --check` pass. Two GNU Make `--eval`
+  cases remain skipped because this host's Make lacks that option; Xcode project
+  parsing is skipped because `xcodebuild` is unavailable.
+- **Findings:** A previously documented fail-closed path reached Make expansion
+  and executed attacker-controlled text before the later shasum failure.
+- **Hosted follow-up:** The first macOS runs exposed that Apple's GNU Make 3.81
+  expands `MAKEFILE_LIST` path syntax before any repository rule can inspect
+  it. The regression now uses a real `$(shell ...)` payload on GNU Make 4+ and
+  skips that unenforceable assertion on 3.81; guidance documents the boundary.
+- **Blockers:** Native app behavior still requires compatible macOS/Xcode and
+  retired Digits/Parse/Fabric services.
+- **Failed attempt:** Home-time request ownership work was saved outside the
+  tree and deferred when this higher-priority validation flaw reproduced.
+- **Next action:** Review the exact PR head and merge only after hosted checks
+  pass.
+
 ## 2026-06-21
 
 - Made absolute external Makefile invocations work when checkout paths contain

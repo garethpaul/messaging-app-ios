@@ -79,6 +79,15 @@ ifneq ($(strip $(MAKEFILES)),)
 $(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
 endif
 override MAKEFILES :=
+override REPOSITORY_MAKE_DOLLAR := $$
+override REPOSITORY_MAKE_OPEN := (
+override REPOSITORY_MAKE_BRACE := {
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_OPEN),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_BRACE),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
 ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
@@ -279,6 +288,7 @@ def main():
         "docs/plans/2026-06-17-pulse-send-request-ownership.md",
         "docs/plans/2026-06-17-partner-request-ownership.md",
         "docs/plans/2026-06-21-spaced-makefile-path.md",
+        "docs/plans/2026-06-25-makefile-path-syntax-rejection.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "scripts/verify-validation-chain.py",
@@ -403,6 +413,7 @@ def main():
     pulse_send_ownership_plan = read("docs/plans/2026-06-17-pulse-send-request-ownership.md")
     partner_request_ownership_plan = read("docs/plans/2026-06-17-partner-request-ownership.md")
     spaced_make_plan = read("docs/plans/2026-06-21-spaced-makefile-path.md")
+    make_path_syntax_plan = read("docs/plans/2026-06-25-makefile-path-syntax-rejection.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -783,6 +794,10 @@ def main():
     require("paths contain spaces" in readme and "MAKEFILE_LIST" in readme,
             "README must document spaced paths and protected Makefile metadata",
             failures)
+    require("`$(" in readme and "`${" in readme and
+            "rejected before shell-backed root resolution" in readme,
+            "README must document pre-expansion Makefile path syntax rejection",
+            failures)
     require("later single-colon public recipe replacement fails closed" in readme,
             "README must document later single-colon recipe replacement behavior",
             failures)
@@ -804,6 +819,11 @@ def main():
             "literal apostrophe" in spaced_make_plan and
             "MAKEFILE_LIST" in spaced_make_plan,
             "spaced Makefile path plan must record completed hostile-path verification",
+            failures)
+    require("status: completed" in make_path_syntax_plan and
+            "`$(" in make_path_syntax_plan and "`${" in make_path_syntax_plan and
+            "untouched" in make_path_syntax_plan and "master" in make_path_syntax_plan,
+            "Makefile path syntax plan must record the reproduced and corrected boundary",
             failures)
     require("status: completed" in pulse_send_session_plan and
             "hostile mutations" in pulse_send_session_plan and

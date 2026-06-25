@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_HASHES = {
-    "scripts/run-isolated-tests.py": "2847c6a6b821b4b699b58294993e6290fdc45223c1b1f858140389b2c7899a31",
+    "scripts/run-isolated-tests.py": "4e513d9c5d3d4ae20c84690a1c201a7e42175d0294392b0200301d7a7d2462df",
 }
 
 
@@ -69,6 +69,15 @@ ifneq ($(strip $(MAKEFILES)),)
 $(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
 endif
 override MAKEFILES :=
+override REPOSITORY_MAKE_DOLLAR := $$
+override REPOSITORY_MAKE_OPEN := (
+override REPOSITORY_MAKE_BRACE := {
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_OPEN),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_BRACE),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
 ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif

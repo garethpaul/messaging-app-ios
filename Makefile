@@ -30,6 +30,15 @@ ifneq ($(strip $(MAKEFILES)),)
 $(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)
 endif
 override MAKEFILES :=
+override REPOSITORY_MAKE_DOLLAR := $$
+override REPOSITORY_MAKE_OPEN := (
+override REPOSITORY_MAKE_BRACE := {
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_OPEN),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
+ifneq ($(findstring $(REPOSITORY_MAKE_DOLLAR)$(REPOSITORY_MAKE_BRACE),$(value MAKEFILE_LIST)),)
+$(error repository Makefile path must not contain Make syntax)
+endif
 ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
@@ -51,7 +60,7 @@ test:: check
 build:: check
 
 check::
-	/usr/bin/printf '%s  %s\n' '1a432d451736c8855490b36a3aade25ded60d96c649985292fb4fe0254f97e84' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
+	/usr/bin/printf '%s  %s\n' '4a25e2c65688502175004c7cd951fa2a02f00d6ada9f4ee26097bce98bc8031f' "$(ROOT)/scripts/verify-validation-chain.py" | /usr/bin/shasum -a 256 -c -
 	/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/verify-validation-chain.py"
 	/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" pre
 	/usr/bin/env -i HOME="$(HOME)" PATH="/usr/bin:/bin:/usr/sbin:/sbin" PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I "$(ROOT)/scripts/run-isolated-tests.py" test

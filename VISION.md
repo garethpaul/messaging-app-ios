@@ -32,6 +32,7 @@ Priority:
 - Keep the new partner user guard before partner flow backend requests
 - Keep partner prefix preservation from erasing already-entered partner numbers
 - Keep partner request ownership bound to the current visible appearance
+- Keep Makefile path-syntax rejection explicit about requiring GNU Make 4+
 - Keep the location share user guard before posting location updates
 - Keep the pulse send throttle from allowing repeat message posts during cooldown
 - Keep the pulse send session guard before request, throttle, and UI mutation
@@ -52,6 +53,7 @@ Priority:
   backend responses
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
+- Reject Make-syntax-bearing Makefile paths before root resolution
 - Keep hosted project validation pinned, read-only, and credential-free on
   macOS through `WhineLocation.xcodeproj` parsing and `make check`
 - Avoid committing real credentials, signing material, message data, or location data

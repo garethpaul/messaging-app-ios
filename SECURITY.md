@@ -33,6 +33,10 @@ Helpful reports include:
 - Review found database, model, query, or persistence-related code; changes in those areas should receive security-focused review before merge.
 - Dependency manifests detected: Podfile, Podfile.lock. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
 - Run `make lint`, `make test`, `make build`, and `make check` after changing Xcode project metadata, `Info.plist` handling, Fabric/Crashlytics setup, backend URLs, Swift sources, Podfile metadata, or security docs.
+- On GNU Make 4+, reject literal `$(` and `${` in repository Makefile paths
+  before using `MAKEFILE_LIST` to derive trusted verification roots. GNU Make
+  3.81 expands that path before repository rules run, so Make syntax in a
+  checkout path is outside the enforceable local boundary on that version.
 - The pinned macOS workflow uses a read-only, credential-free checkout and only
   parses project metadata and static resources; it does not install pods,
   receive service credentials, authenticate users, contact backends, share
