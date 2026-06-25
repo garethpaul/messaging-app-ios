@@ -11,7 +11,7 @@ only failed later when the truncated path reached `shasum`.
 
 ## Design
 
-- On GNU Make 4+, inspect the raw `MAKEFILE_LIST` value before any repository
+- On GNU Make 4.3+, inspect the raw `MAKEFILE_LIST` value before any repository
   `$(shell ...)` root logic.
 - Reject literal `$(` and `${` Make syntax without recursively expanding it.
 - Apply the same policy to the live Makefile and every authenticated expected
@@ -25,13 +25,14 @@ The existing hostile `$()` test reproduced command execution against untouched
 fix. A second `${` path case was added after the boundary was implemented.
 Hosted macOS then demonstrated that GNU Make 3.81 expands the filename while
 populating `MAKEFILE_LIST`, before any loaded Makefile rule can reject it. The
-final regression uses an actual `$(shell ...)` payload on GNU Make 4+ and skips
-the impossible in-Makefile assertion on 3.81.
+final regression uses an actual `$(shell ...)` payload on GNU Make 4.3+ and
+skips the impossible in-Makefile assertion on 3.81 and 4.2.
 
 ## Verification
 
 - Focused `$()` and `${` path tests passed with GNU Make 4.3 and skip on GNU
-  Make 3.81, where the path has already expanded before repository code runs.
+  Make 3.81 and 4.2, where the path has already expanded before repository code
+  runs.
 - `python3 -m unittest discover -s tests -p 'test_*.py'` passed 80 tests with
   two `--eval` cases skipped because the host Make lacks that option.
 - Root and external-directory `make check` passed the authenticated

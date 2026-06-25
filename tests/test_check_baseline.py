@@ -87,7 +87,11 @@ def make_preserves_literal_makefile_list(make_binary="make"):
     if result.returncode != 0 or not result.stdout.startswith("GNU Make "):
         return False
     version = result.stdout.splitlines()[0].split()[-1]
-    return int(version.split(".", 1)[0]) >= 4
+    try:
+        major, minor = (int(part) for part in version.split(".", 2)[:2])
+    except (TypeError, ValueError):
+        return False
+    return (major, minor) >= (4, 3)
 
 
 def validation_root_hash(root):
@@ -275,6 +279,24 @@ CHECKER = load_checker()
 RUNNER = load_runner()
 
 
+class MakeCapabilityTests(unittest.TestCase):
+    def test_literal_makefile_list_requires_gnu_make_4_3(self):
+        versions = {
+            "GNU Make 3.81\n": False,
+            "GNU Make 4.2.1\n": False,
+            "GNU Make 4.3\n": True,
+            "GNU Make 4.4.1\n": True,
+            "BSD make 20240101\n": False,
+        }
+        for output, expected in versions.items():
+            with self.subTest(output=output):
+                completed = subprocess.CompletedProcess(
+                    ["make", "--version"], 0, output, ""
+                )
+                with mock.patch.object(subprocess, "run", return_value=completed):
+                    self.assertEqual(expected, make_preserves_literal_makefile_list())
+
+
 class XcodebuildProbeContractTests(unittest.TestCase):
     def test_checker_bounds_xcodebuild_project_parse_probe(self):
         original_run = CHECKER.subprocess.run
@@ -401,7 +423,7 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def test_makefile_literal_dollar_parentheses_path_fails_closed(self):
         if not make_preserves_literal_makefile_list():
-            self.skipTest("GNU Make 4+ is required to inspect literal Makefile path syntax")
+            self.skipTest("GNU Make 4.3+ is required to inspect literal Makefile path syntax")
 
         external = self.snapshot_root / "external caller"
         marker = external / "make-path-executed"
@@ -425,7 +447,7 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def test_makefile_literal_dollar_brace_path_fails_closed(self):
         if not make_preserves_literal_makefile_list():
-            self.skipTest("GNU Make 4+ is required to inspect literal Makefile path syntax")
+            self.skipTest("GNU Make 4.3+ is required to inspect literal Makefile path syntax")
 
         external = self.snapshot_root / "external brace caller"
         checkout = self.snapshot_root / "checkout ${untrusted-make-variable}"

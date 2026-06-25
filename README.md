@@ -126,12 +126,12 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Makefiles are programs outside the local trust boundary: GNU Make can parse
   startup code before repository rules run, and caller-added double-colon recipes
   can run with caller authority. Only the documented single-`-f`
-  invocation is trusted locally. GNU Make 4 and newer preserve literal
+  invocation is trusted locally. GNU Make 4.3 and newer preserve literal
   `MAKEFILE_LIST` path text long enough for checkout paths containing `$(` or
   `${` to be rejected before shell-backed root resolution. Apple's GNU Make
-  3.81 expands Make syntax while loading the path, before repository rules can
-  run, so do not invoke it with a checkout path containing Make syntax; move or
-  rename the checkout, or use GNU Make 4+.
+  3.81 and GNU Make 4.2 expand Make syntax while loading the path, before
+  repository rules can run, so do not invoke them with a checkout path
+  containing Make syntax; move or rename the checkout, or use GNU Make 4.3+.
 - Pinned `macos-15` GitHub Actions uses a read-only, credential-free checkout
   and authenticates `scripts/verify-validation-chain.py` with a hardcoded
   SHA-256 digest through `/usr/bin/shasum` before Python can execute it. The
