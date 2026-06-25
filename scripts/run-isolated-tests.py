@@ -17,13 +17,13 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "0411ac5b81ff1c3064367e87cd4c8ba9b3a500f7722bf4f9568d05cfeb9e79db",
+    "tests/test_check_baseline.py": "9897b7576b0825d334fedbcde678c60069b12f43cabad2b25443b84c09d551c0",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
-        "10fb8ca2b1a1767f8a6679fb79d6d99712a354e4d81234ee555010d28cf9d73d",
+        "432af96318ea129b7714e5deb62826239cec68bca656497f8c211c8afe7a84b3",
     "WhineLocation/HomeTimeViewController.swift":
-        "cd5ebd6aa378c470a08069a2fd574122d7819bc39d52f429c33740503f75591c",
+        "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
     "WhineLocation/Base.lproj/Main.storyboard":
         "a621749ce902822ff3b7cda43b33619b815b22efdb25bac35fa30677b845bfb5",
     "WhineLocation.xcodeproj/project.pbxproj":

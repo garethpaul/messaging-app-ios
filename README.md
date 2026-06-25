@@ -100,8 +100,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   request state or loading UI can change.
 - Waiting request cancellation stops retained Alamofire transport when the
   controller disappears and identity-binds callback cleanup across re-entry.
-- The home time submission guard requires a normalized Digits user ID and only
-  opens the next screen after a successful Alamofire response.
+- Home-time request ownership extends the home time submission guard: it
+  cancels replaced or disappearing submissions, rejects callbacks from prior
+  appearances, and opens the next screen only from the exact retained
+  successful request while the view remains active.
 
 ## Testing and Verification
 
@@ -173,8 +175,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Waiting request cancellation should stop obsolete transport without allowing
   a canceled callback to clear a newer appearance's request.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
-- The home time submission guard should keep home-time POSTs behind normalized
-  Digits session IDs and successful backend responses.
+- Home-time request ownership should extend the home time submission guard by
+  keeping POSTs behind normalized Digits session IDs and binding navigation to
+  the exact retained request and appearance.
 
 ## Security and Privacy Notes
 

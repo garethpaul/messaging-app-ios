@@ -49,8 +49,8 @@ Priority:
 - Keep the waiting appearance generation guard across controller re-entry
 - Keep the waiting active check entry guard before request-state mutation
 - Keep waiting request cancellation bound to the exact controller appearance
-- Keep the home time submission guard behind normalized identity and successful
-  backend responses
+- Keep home-time request ownership extending the home time submission guard and
+  bound to the latest retained request and current visible appearance
 - Keep state-changing user, location, hometime, and beacon updates on POST
 - Keep local lint, test, build, and check gates on the same static baseline
 - Reject Make-syntax-bearing Makefile paths before root resolution
@@ -102,8 +102,10 @@ The pulse list user guard should keep message list refreshes tied to normalized
 Digits session identities and guarded response JSON.
 Pulse row integrity should keep partial records out of live table state and
 publish every replacement array before reloading rows.
-The home time submission guard should keep home-time updates tied to normalized
-Digits identities and only navigate after successful Alamofire responses.
+Home-time request ownership should extend the home time submission guard by
+keeping updates tied to normalized Digits identities, canceling obsolete
+transport, and navigating only from the exact retained successful request for
+the current visible appearance.
 
 ## What We Will Not Merge (For Now)
 

@@ -80,8 +80,9 @@ Helpful reports include:
   before request state, loading UI, or delayed work changes.
 - Waiting request cancellation should cancel retained transport on controller
   disappearance and identity-bind callback cleanup before current-state changes.
-- The home time submission guard should require a normalized Digits user ID
-  before posting and should not present failed requests as successful updates.
+- Home-time request ownership should extend the home time submission guard by
+  requiring a normalized Digits user ID, canceling replaced or disappearing
+  transport, and rejecting stale callbacks before navigation or cleanup.
 
 ## Mobile Privacy Notes
 
