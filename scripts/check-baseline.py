@@ -289,6 +289,7 @@ def main():
         "docs/plans/2026-06-17-partner-request-ownership.md",
         "docs/plans/2026-06-21-spaced-makefile-path.md",
         "docs/plans/2026-06-25-makefile-path-syntax-rejection.md",
+        "docs/plans/2026-06-26-beacon-publication-guard.md",
         "docs/readme-overview.svg",
         "scripts/check-baseline.py",
         "scripts/verify-validation-chain.py",
@@ -414,6 +415,7 @@ def main():
     partner_request_ownership_plan = read("docs/plans/2026-06-17-partner-request-ownership.md")
     spaced_make_plan = read("docs/plans/2026-06-21-spaced-makefile-path.md")
     make_path_syntax_plan = read("docs/plans/2026-06-25-makefile-path-syntax-rejection.md")
+    beacon_publication_plan = read("docs/plans/2026-06-26-beacon-publication-guard.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -613,6 +615,25 @@ def main():
             failures)
     require('Alamofire.request(.POST, getInfo("beaconUrl")' in core_location,
             "beacon updates must use POST",
+            failures)
+    beacon_range_start = core_location.find("func locationManager(manager: CLLocationManager!, didRangeBeacons")
+    beacon_range_end = core_location.find("func locationManager(manager: CLLocationManager!, didUpdateLocations", beacon_range_start)
+    beacon_range = core_location[beacon_range_start:beacon_range_end]
+    beacon_transition = beacon_range.find("if prev != proximity")
+    beacon_identity = beacon_range.find("guard let userId = currentDigitsUserID() else", beacon_transition)
+    beacon_request = beacon_range.find(
+        'Alamofire.request(.POST, getInfo("beaconUrl"), parameters: ["beacon": region.identifier, "userId": userId])',
+        beacon_identity,
+    )
+    beacon_previous_state = beacon_range.find("prev = proximity", beacon_request)
+    require(-1 not in (beacon_range_start, beacon_range_end, beacon_transition,
+                       beacon_identity, beacon_request, beacon_previous_state) and
+            beacon_transition < beacon_identity < beacon_request < beacon_previous_state and
+            beacon_range.count('Alamofire.request(.POST, getInfo("beaconUrl")') == 1,
+            "beacon publication must require changed proximity and normalized identity before POST",
+            failures)
+    require('"userId": userId' in beacon_range,
+            "beacon publication must bind the request to the normalized Digits user ID",
             failures)
     require("println(" not in core_location,
             "CoreLocationController must not log location/beacon debug output",
@@ -1133,6 +1154,14 @@ def main():
     require("location share user guard" in changes.lower(),
             "CHANGES must record location share user guard hardening",
             failures)
+    require("beacon identity and redundant-write correctness" in changes.lower(),
+            "CHANGES must record beacon publication hardening",
+            failures)
+    require("beacon publication guard" in readme.lower() and
+            "changed proximity" in security.lower() and
+            "identity-bound" in vision.lower(),
+            "public guidance must document the beacon publication guard",
+            failures)
     require("new partner user guard" in changes.lower(),
             "CHANGES must record new partner user guard hardening",
             failures)
@@ -1192,6 +1221,10 @@ def main():
             failures)
     require("status: completed" in location_share_plan,
             "location share user guard plan must be marked completed",
+            failures)
+    require("status: completed" in beacon_publication_plan and
+            "make check" in beacon_publication_plan,
+            "beacon publication guard plan must be completed and document make check",
             failures)
     require("status: completed" in make_gate_plan,
             "Make gate alias plan must be marked completed",

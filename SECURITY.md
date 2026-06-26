@@ -53,6 +53,8 @@ Helpful reports include:
 - Partner request ownership should reject superseded and prior-appearance
   callbacks before they can navigate to the waiting flow.
 - The location share user guard should require a normalized Digits user ID before posting location coordinates.
+- Beacon publications should require changed proximity and a normalized Digits
+  user ID before transmitting the beacon identifier.
 - The pulse send throttle should mark message sends unavailable during cooldown so repeat taps cannot post duplicate messages.
 - The pulse send session guard should require one valid Digits session and
   normalized user ID before request, throttle, text, or button mutations.

@@ -50,10 +50,13 @@ class CoreLocationController : NSObject, CLLocationManagerDelegate {
             // Set the proximity
             let proximity = closestBeacon.proximity.rawValue
 
-            Alamofire.request(.POST, getInfo("beaconUrl"), parameters: ["beacon": region.identifier])
-
             // If the proximity does not equal the prev value set the user has become closer or further away from the beacon
-            if prev != closestBeacon.proximity.rawValue {
+            if prev != proximity {
+                guard let userId = currentDigitsUserID() else {
+                    return
+                }
+
+                Alamofire.request(.POST, getInfo("beaconUrl"), parameters: ["beacon": region.identifier, "userId": userId])
 
                 // If the proximity is very close - we should show some TV tweets
                 if (proximity == 1){

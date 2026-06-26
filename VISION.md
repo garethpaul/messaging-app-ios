@@ -34,6 +34,7 @@ Priority:
 - Keep partner request ownership bound to the current visible appearance
 - Keep Makefile path-syntax rejection explicit about requiring GNU Make 4.3+
 - Keep the location share user guard before posting location updates
+- Keep beacon publications identity-bound and limited to proximity changes
 - Keep the pulse send throttle from allowing repeat message posts during cooldown
 - Keep the pulse send session guard before request, throttle, and UI mutation
 - Keep pulse send request ownership authoritative through success, failure, and
@@ -96,6 +97,8 @@ Partner prefix preservation should avoid erasing partially entered partner phone
 numbers when the field is focused again.
 The location share user guard should keep location updates tied to normalized
 Digits session identities.
+The beacon publication guard should apply the same identity boundary and avoid
+reposting an unchanged proximity on every ranging callback.
 The pulse send throttle should keep repeat taps from posting duplicate messages
 while the message list refresh is pending.
 The pulse list user guard should keep message list refreshes tied to normalized
