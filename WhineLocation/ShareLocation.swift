@@ -18,6 +18,6 @@ class ShareLocation {
             return
         }
 
-        Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location", parameters: ["lat": lat, "lng": lng, "userId": userId])
+        Alamofire.request(.POST, getInfo("locationUrl"), parameters: ["lat": lat, "lng": lng, "userId": userId])
     }
 }

@@ -13,6 +13,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 
 - `README.md` - project overview and local usage notes
 - `CHANGES.md` - recent maintenance changes
+- `docs/BACKEND_CONFIGURATION.md` - local backend setup and transmitted-data map
 - `Makefile` - local static verification entry point
 - `Podfile` - Apple platform dependency metadata
 - `Crashlytics.framework` - source or example code
@@ -59,9 +60,16 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Running or Using the Project
 
+- Read `docs/BACKEND_CONFIGURATION.md` before supplying credentials or backend
+  routes. It defines the ignored local plist/xcconfig workflow and the data
+  transmitted by each request.
 - Open `WhineLocation.xcodeproj` in Xcode, choose the app or sample scheme, and run it on the matching simulator/device.
 - Supply `FABRIC_API_KEY`, `CRASHLYTICS_BUILD_SECRET`, `TWITTER_CONSUMER_KEY`, and `TWITTER_CONSUMER_SECRET` through CI settings, local Xcode build settings, or an ignored xcconfig copied from `WhineLocation/ServiceKeys.xcconfig.example`.
 - `WhineLocation/Info.plist` is tracked with placeholder-safe service keys and backend endpoint values; missing plist-backed values make `getInfo` return an empty value instead of force-unwrapping.
+- All nine backend calls, including user registration, location sharing, and
+  message read-state writes, resolve through plist keys with
+  `https://example.invalid` tracked defaults; executable Swift contains no
+  historical App Engine host.
 - Message read-state caching is keyed by the active Digits user and skips updates when the session or remote array shape is unavailable.
 - Digits user ID normalization trims session IDs and skips blank values before message read-state storage changes.
 - A Digits login success guard keeps failed authentication callbacks out of the partner flow and stores only normalized user IDs.
@@ -186,6 +194,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Security and Privacy Notes
 
+- `docs/BACKEND_CONFIGURATION.md` maps every route to its phone identity,
+  message, read-state, home-time, beacon, or location fields and documents the
+  server-side authorization and retention expectations for any revival.
 - Review changes touching authentication or token handling; examples from the scan include Crashlytics.framework/Headers/Crashlytics.h, DigitsKit.framework/Headers/DGTAuthenticateButton.h, DigitsKit.framework/Headers/DGTContacts.h, DigitsKit.framework/Headers/DGTOAuthSigning.h, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include Crashlytics.framework/Headers/Crashlytics.h, DigitsKit.framework/Headers/DGTAppearance.h, DigitsKit.framework/Headers/DGTAuthenticateButton.h, DigitsKit.framework/Headers/DGTContactAccessAuthorizationStatus.h, and 6 more.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include Podfile, TwitterCore.framework/Headers/TWTRAPIErrorCode.h, TwitterCore.framework/Headers/TWTRAuthConfig.h, TwitterCore.framework/Headers/TWTRCoreOAuthSigning.h, and 6 more.
@@ -207,6 +218,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   throttle guardrail.
 - See `docs/plans/2026-06-10-pulse-list-user-guard.md` for the pulse list user
   guardrail.
+- See `docs/plans/2026-06-26-configured-backend-endpoints.md` for the configured
+  endpoint, privacy documentation, and checkout-specific integrity-state work.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

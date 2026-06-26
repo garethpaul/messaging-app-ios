@@ -11,17 +11,21 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_STATE = Path(tempfile.gettempdir()) / "messaging-ios-integrity-state.json"
+DEFAULT_STATE = Path(tempfile.gettempdir()) / (
+    "messaging-ios-integrity-state-" +
+    openssl_sha256(str(ROOT).encode("utf-8")).hexdigest()[:16] +
+    ".json"
+)
 SANITIZED_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
 GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "f01a3b06536ab60814e1f14d5d01cfbf3050f061a3e30ced8a5dba09f8580301",
+    "tests/test_check_baseline.py": "5031fc9e02a53b1b69c7e0e39ab61e9acba855ae61fbd5bac9f28443b0962b77",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
-        "839dc7e0a3461ad8a263b296f07c2f1d7c77cada848e73c154c223e534b2400d",
+        "1779f540286d155c10aba8df7c49119524921747cb64680ca7fffd0dc114bae7",
     "WhineLocation/HomeTimeViewController.swift":
         "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
     "WhineLocation/Base.lproj/Main.storyboard":
