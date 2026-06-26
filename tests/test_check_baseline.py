@@ -45,6 +45,10 @@ WAITING_REQUEST = (
     'parameters: ["userId": userId, "phoneNumber": digitsSession.phoneNumber])'
 )
 WAITING_VALIDATED_REQUEST = WAITING_REQUEST + ".validate(statusCode: 200..<300)"
+BEACON_REQUEST = (
+    'Alamofire.request(.POST, getInfo("beaconUrl"), '
+    'parameters: ["beacon": region.identifier, "userId": userId])'
+)
 PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
         "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
@@ -871,6 +875,53 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertEqual(0, return_code, standard_error)
         self.assertEqual([], self.independent_contract_failures())
 
+    def test_current_beacon_publication_requires_identity_and_transition(self):
+        return_code, _, standard_error = self.run_checker()
+        self.assertEqual(0, return_code, standard_error)
+
+    def test_checker_rejects_beacon_publication_without_identity_guard(self):
+        self.replace_source(
+            "WhineLocation/CoreLocationController.swift",
+            "guard let userId = currentDigitsUserID() else {\n                    return\n                }",
+            'let userId = ""',
+        )
+        self.assert_checker_rejects_with(
+            "beacon publication must require changed proximity and normalized identity before POST"
+        )
+
+    def test_checker_rejects_beacon_request_without_user_identity(self):
+        self.replace_source(
+            "WhineLocation/CoreLocationController.swift",
+            BEACON_REQUEST,
+            'Alamofire.request(.POST, getInfo("beaconUrl"), parameters: ["beacon": region.identifier])',
+        )
+        self.assert_checker_rejects_with(
+            "beacon publication must require changed proximity and normalized identity before POST"
+        )
+
+    def test_checker_rejects_beacon_publication_before_proximity_change(self):
+        source_path = self.source("WhineLocation/CoreLocationController.swift")
+        source = source_path.read_text(encoding="utf-8")
+        guarded_block = (
+            "            if prev != proximity {\n"
+            "                guard let userId = currentDigitsUserID() else {\n"
+            "                    return\n"
+            "                }\n\n"
+            "                " + BEACON_REQUEST + "\n"
+        )
+        unsafe_block = (
+            "            guard let userId = currentDigitsUserID() else {\n"
+            "                return\n"
+            "            }\n"
+            "            " + BEACON_REQUEST + "\n\n"
+            "            if prev != proximity {\n"
+        )
+        self.assertIn(guarded_block, source)
+        source_path.write_text(source.replace(guarded_block, unsafe_block, 1), encoding="utf-8")
+        self.assert_checker_rejects_with(
+            "beacon publication must require changed proximity and normalized identity before POST"
+        )
+
     def test_checker_rejects_home_time_disappearance_without_cancellation(self):
         self.replace_source(
             "WhineLocation/HomeTimeViewController.swift",
@@ -959,6 +1010,7 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             "later single-colon public recipe replacement",
             "caller-added double-colon recipes run with caller authority",
             "documented single-`-f` invocation",
+            "Beacon publications must require a normalized Digits user ID",
         ]:
             with self.subTest(required_text=required_text):
                 self.assertIn(required_text, guidance)

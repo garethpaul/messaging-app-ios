@@ -17,11 +17,11 @@ GIT = "/usr/bin/git"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_TEST_FILES = ["tests/test_check_baseline.py"]
 EXPECTED_TEST_HASHES = {
-    "tests/test_check_baseline.py": "72bb7054a4a31e130d0b7aedf11ce078e52a41868e0e712b8789fb8ed203c6e5",
+    "tests/test_check_baseline.py": "f01a3b06536ab60814e1f14d5d01cfbf3050f061a3e30ced8a5dba09f8580301",
 }
 EXPECTED_PROTECTED_HASHES = {
     "scripts/check-baseline.py":
-        "432af96318ea129b7714e5deb62826239cec68bca656497f8c211c8afe7a84b3",
+        "839dc7e0a3461ad8a263b296f07c2f1d7c77cada848e73c154c223e534b2400d",
     "WhineLocation/HomeTimeViewController.swift":
         "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
     "WhineLocation/Base.lproj/Main.storyboard":

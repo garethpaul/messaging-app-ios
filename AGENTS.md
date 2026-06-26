@@ -70,6 +70,8 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
 - Message read-state changes should preserve guarded Digits session lookup and array casts.
 - Digits user ID normalization should continue to reject blank session IDs before writing local read-state data.
 - The Digits login success guard should keep failed authentication callbacks from storing identity or opening the partner flow.
+- Beacon publications must require a normalized Digits user ID and a changed
+  proximity before starting the POST.
 - Home-time submissions must retain one request, cancel replacements and
   disappearance, and identity-bind success navigation to the active appearance.
 

@@ -66,6 +66,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Digits user ID normalization trims session IDs and skips blank values before message read-state storage changes.
 - A Digits login success guard keeps failed authentication callbacks out of the partner flow and stores only normalized user IDs.
 - The location share user guard skips location POSTs when no normalized Digits user ID is available.
+- The beacon publication guard posts only after proximity changes and includes
+  the normalized Digits user ID; callbacks without identity do not consume the
+  transition.
 - The new partner user guard skips partner requests when the partner number, normalized Digits user ID, or Digits session is unavailable.
 - Partner prefix preservation keeps the `+1` seed for blank partner numbers
   without erasing already-entered partner input when the field is focused again.
@@ -175,6 +178,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Waiting request cancellation should stop obsolete transport without allowing
   a canceled callback to clear a newer appearance's request.
 - The location share user guard should keep location POSTs behind normalized Digits session IDs.
+- The beacon publication guard should keep beacon POSTs behind changed
+  proximity and normalized Digits identity.
 - Home-time request ownership should extend the home time submission guard by
   keeping POSTs behind normalized Digits session IDs and binding navigation to
   the exact retained request and appearance.

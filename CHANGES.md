@@ -1,5 +1,32 @@
 # Changes
 
+## 2026-06-26 04:24 PDT
+
+- **Priority:** P1 beacon identity and redundant-write correctness.
+- **Summary:** Bound beacon publications to normalized Digits identity and a
+  real proximity transition.
+- **Work:** Moved the POST inside the existing previous-proximity comparison,
+  included `userId` in request parameters, and left `prev` unchanged when no
+  authenticated identity is available.
+- **Threads:** No delegated threads were used.
+- **Files:** Updated the Core Location delegate, static and hostile mutation
+  contracts, validation-chain hashes, privacy guidance, roadmap, agent notes,
+  and a completed plan.
+- **Validation:** The focused current-source test and checker first failed on
+  the anonymous unconditional POST. The repaired source and three hostile
+  identity/parameter/ordering mutations pass. All 89 isolated tests, root and
+  external-directory authenticated `make check`, direct validation-root and
+  baseline checks, Python compilation, and `git diff --check` pass; two
+  unrelated GNU Make `--eval` cases skip locally. Hosted macOS and CodeQL
+  remain merge gates.
+- **Findings:** `didRangeBeacons` previously posted on every known-beacon
+  callback before checking `prev`, and the backend request carried no user
+  identity even when a Digits session existed.
+- **Blockers:** Runtime ranging still requires compatible legacy Xcode,
+  Bluetooth beacon hardware, Digits identity, and the retired backend stack.
+- **Next action:** Verify the exact PR head on hosted macOS and merge only that
+  green reviewed head.
+
 ## 2026-06-25 10:20 PDT
 
 - **Priority:** P1 validation portability and trust-boundary accuracy.
