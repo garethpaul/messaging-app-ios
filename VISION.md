@@ -5,6 +5,8 @@ Project overview and developer docs: [`README.md`](README.md)
 
 Messaging App iOS is a legacy iOS messaging app backed by Google App Engine and
 using Fabric, TwitterKit, Digits, Parse, Alamofire, and location-related code.
+Backend setup and transmitted data are documented in
+[`docs/BACKEND_CONFIGURATION.md`](docs/BACKEND_CONFIGURATION.md).
 
 The repository is useful as a preserved mobile messaging prototype with phone
 login, messaging UI, backend integration, and older third-party SDKs. Project
@@ -25,6 +27,8 @@ Priority:
 
 - Preserve the messaging, login, and backend integration structure
 - Keep Fabric/Twitter/Digits/Parse credential assumptions visible
+- Keep every backend route behind placeholder-safe plist configuration and out
+  of executable source literals
 - Keep `getInfo` safe when local plist endpoint configuration is absent
 - Keep message read-state updates guarded around Digits sessions and remote data shape
 - Keep Digits user ID normalization in front of message read-state storage
@@ -62,10 +66,8 @@ Priority:
 
 Next priorities:
 
-- Add setup details for backend configuration and local credentials
 - Modernize deprecated SDKs only in a dedicated pass
 - Add tests or manual checklists for login and message flows
-- Document privacy expectations for messages, phone identity, and location
 
 Contribution rules:
 

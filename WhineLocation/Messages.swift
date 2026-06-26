@@ -28,7 +28,7 @@ func compareRead(data:AnyObject!) {
 
     if localReadState != remoteReadState {
         Alamofire.request(.POST,
-            "https://requestlabs.appspot.com/whine/pulse/messages/read",
+            getInfo("pulseListReadUrl"),
             parameters:["data": remoteReadState, "userId": userId],
             encoding: .JSON)
         setRead(remoteReadState)
@@ -55,4 +55,3 @@ func normalizedDigitsUserID(userID: String?) -> String? {
 
     return trimmedUserID
 }
-

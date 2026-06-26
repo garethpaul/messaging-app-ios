@@ -51,6 +51,12 @@
 	<string>https://example.invalid/whine/beacon</string>
 	<key>newHometimeUrl</key>
 	<string>https://example.invalid/whine/hometime</string>
+	<key>userUrl</key>
+	<string>https://example.invalid/whine/user</string>
+	<key>locationUrl</key>
+	<string>https://example.invalid/whine/location</string>
+	<key>pulseListReadUrl</key>
+	<string>https://example.invalid/whine/pulse/messages/read</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

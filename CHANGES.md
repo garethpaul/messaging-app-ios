@@ -1,5 +1,38 @@
 # Changes
 
+## 2026-06-26 04:32 PDT — P1 configured backend and privacy boundary
+
+- Found three state-changing Swift requests that bypassed the placeholder-safe
+  plist configuration and retained the historical App Engine host for user
+  registration, location sharing, and message read-state publication.
+- Added `userUrl`, `locationUrl`, and `pulseListReadUrl` with
+  `https://example.invalid` defaults, then routed all three requests through
+  `getInfo` so every backend call is locally configurable and a clean checkout
+  cannot contact the historical host.
+- Added a canonical ignored `Info.local.plist` and
+  `ServiceKeys.local.xcconfig` workflow, an explicit `xcodebuild -xcconfig`
+  example, and a nine-route map of phone identity, message, read-state,
+  home-time, beacon, and precise-location fields.
+- Added fail-closed source, plist, documentation, and roadmap contracts. The
+  red baseline reported all three missing keys, all three source bypasses, the
+  historical host, the absent guide, missing document links, and incomplete
+  plan evidence before production changes.
+- During repeated alias validation, `make test` failed postflight because nested
+  snapshot tests could overwrite the outer checkout's fixed `/tmp` integrity
+  state. Added a red two-checkout regression and made default state filenames
+  checkout-specific; the previously failing back-to-back alias now passes.
+- PR #28 merged concurrently with an identity-bound, transition-only beacon
+  publication guard. Rebased onto that change, corrected the endpoint data map
+  to include normalized beacon identity, and regenerated the combined
+  checker/runner/validation-root authentication chain.
+- All 90 combined isolated tests pass with two expected GNU Make capability
+  skips. All four Make aliases passed from repository and external working
+  directories before the rebase, combined rebased `make check` passes, and 29
+  isolated backend-boundary mutations are rejected. `xcodebuild` is unavailable
+  locally, so hosted macOS project parsing remains required.
+- Retired the backend-configuration and privacy-expectation roadmap items;
+  legacy SDK modernization and manual login/message flow verification remain.
+
 ## 2026-06-26 04:24 PDT
 
 - **Priority:** P1 beacon identity and redundant-write correctness.

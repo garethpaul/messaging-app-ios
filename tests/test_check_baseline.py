@@ -1719,6 +1719,25 @@ class HomeTimeValidationContractTests(unittest.TestCase):
         self.assertEqual(1, post.returncode)
         self.assertIn("candidate tree changed", post.stderr)
 
+    def test_integrity_default_state_is_checkout_specific(self):
+        states = []
+        for index in range(2):
+            checkout = Path(self.temporary_directory.name) / f"checkout-{index}"
+            runner = checkout / "scripts/run-isolated-tests.py"
+            runner.parent.mkdir(parents=True)
+            shutil.copy2(RUNNER_PATH, runner)
+            specification = importlib.util.spec_from_file_location(
+                f"checkout_specific_runner_{index}",
+                runner,
+            )
+            module = importlib.util.module_from_spec(specification)
+            specification.loader.exec_module(module)
+            states.append(module.DEFAULT_STATE)
+
+        self.assertNotEqual(states[0], states[1])
+        self.assertEqual(states[0].parent, Path(tempfile.gettempdir()))
+        self.assertEqual(states[1].parent, Path(tempfile.gettempdir()))
+
 
 if __name__ == "__main__":
     unittest.main()

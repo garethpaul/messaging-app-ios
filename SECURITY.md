@@ -42,6 +42,9 @@ Helpful reports include:
   receive service credentials, authenticate users, contact backends, share
   location, process messages, build or sign the app, or launch a simulator.
 - `WhineLocation/Info.plist` should stay tracked with placeholder-safe metadata and privacy usage descriptions.
+- `docs/BACKEND_CONFIGURATION.md` is the canonical local override and data-flow
+  boundary for phone identity, messages, read state, home time, beacon reports,
+  and location.
 - Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, phone identity data, messages, and location data should stay out of git.
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
 - Plist-backed endpoint lookup through `getInfo` should fail closed instead of force-unwrapping missing local configuration.

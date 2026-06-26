@@ -380,6 +380,10 @@ def main():
     core_location = read("WhineLocation/CoreLocationController.swift")
     waiting = read("WhineLocation/WaitingViewController.swift")
     pulse = read("WhineLocation/PulseViewController.swift")
+    swift_sources = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace")
+        for path in sorted((ROOT / "WhineLocation").glob("*.swift"))
+    )
     readme = read("README.md")
     vision = read("VISION.md")
     security = read("SECURITY.md")
@@ -416,6 +420,9 @@ def main():
     spaced_make_plan = read("docs/plans/2026-06-21-spaced-makefile-path.md")
     make_path_syntax_plan = read("docs/plans/2026-06-25-makefile-path-syntax-rejection.md")
     beacon_publication_plan = read("docs/plans/2026-06-26-beacon-publication-guard.md")
+    backend_configuration_path = ROOT / "docs/BACKEND_CONFIGURATION.md"
+    backend_configuration = backend_configuration_path.read_text(encoding="utf-8") if backend_configuration_path.exists() else ""
+    backend_configuration_plan = read("docs/plans/2026-06-26-configured-backend-endpoints.md")
     workflow = read(".github/workflows/check.yml")
     workflow_files = [
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
@@ -446,19 +453,33 @@ def main():
     require(info.get("TwitterKitConsumerSecret") == "$(TWITTER_CONSUMER_SECRET)",
             "Info.plist must use TWITTER_CONSUMER_SECRET placeholder",
             failures)
-    for key in ["waitingUrl", "pulseListUrl", "pulseListSendUrl", "newpartnerUrl", "beaconUrl", "newHometimeUrl"]:
-        require(info.get(key, "").startswith("https://"),
-                f"Info.plist must define HTTPS backend key {key}",
+    backend_defaults = {
+        "waitingUrl": "https://example.invalid/whine/waiting",
+        "pulseListUrl": "https://example.invalid/whine/pulse/list",
+        "pulseListSendUrl": "https://example.invalid/whine/pulse/send",
+        "newpartnerUrl": "https://example.invalid/whine/partner",
+        "beaconUrl": "https://example.invalid/whine/beacon",
+        "newHometimeUrl": "https://example.invalid/whine/hometime",
+        "userUrl": "https://example.invalid/whine/user",
+        "locationUrl": "https://example.invalid/whine/location",
+        "pulseListReadUrl": "https://example.invalid/whine/pulse/messages/read",
+    }
+    for key, expected_url in backend_defaults.items():
+        require(info.get(key) == expected_url,
+                f"Info.plist must keep placeholder-safe backend default {key}",
                 failures)
     require("NSLocationAlwaysUsageDescription" in info and "NSLocationWhenInUseUsageDescription" in info,
             "Info.plist must document location permissions",
             failures)
 
-    require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/user"' in user,
-            "user registration must use POST",
+    require('Alamofire.request(.POST, getInfo("userUrl")' in user,
+            "user registration must use configured POST endpoint userUrl",
             failures)
-    require('Alamofire.request(.POST' in messages and 'messages/read"' in messages,
-            "message read-state updates must use POST",
+    require('Alamofire.request(.POST' in messages and 'getInfo("pulseListReadUrl")' in messages,
+            "message read-state updates must use configured POST endpoint pulseListReadUrl",
+            failures)
+    require("requestlabs.appspot.com" not in swift_sources,
+            "executable Swift must not retain the historical App Engine backend host",
             failures)
     require("currentDigitsUserID()" in messages and "as? NSArray" in messages and "as! NSArray" not in messages,
             "message read-state handling must guard Digits sessions and array casts",
@@ -605,8 +626,8 @@ def main():
     require(partner_status_validation >= 0,
             "New partner requests must validate HTTP 2xx status before navigation",
             failures)
-    require('Alamofire.request(.POST, "https://requestlabs.appspot.com/whine/location"' in share_location,
-            "location sharing must use POST",
+    require('Alamofire.request(.POST, getInfo("locationUrl")' in share_location,
+            "location sharing must use configured POST endpoint locationUrl",
             failures)
     require("guard let userId = currentDigitsUserID() else" in share_location and
             'userId = ""' not in share_location and
@@ -1077,6 +1098,34 @@ def main():
     generated = [path for path in tracked if "xcuserdata" in path or path.endswith(".xcuserstate")]
     require(not generated, "generated Xcode user state must not be tracked: " + ", ".join(generated), failures)
 
+    normalized_backend_configuration = re.sub(r"\s+", " ", backend_configuration)
+    backend_documentation_contracts = [
+        "WhineLocation/Info.local.plist",
+        "WhineLocation/ServiceKeys.local.xcconfig",
+        "INFOPLIST_FILE = WhineLocation/Info.local.plist",
+        "-xcconfig WhineLocation/ServiceKeys.local.xcconfig",
+        "userUrl",
+        "locationUrl",
+        "pulseListReadUrl",
+        "phoneNumber",
+        "latitude and longitude",
+        "message text",
+        "read-state identifiers",
+        "beacon region identifier, normalized user ID",
+        "Do not commit",
+    ]
+    require(backend_configuration_path.exists(),
+            "docs/BACKEND_CONFIGURATION.md must exist",
+            failures)
+    for contract in backend_documentation_contracts:
+        require(contract in normalized_backend_configuration,
+                f"backend configuration guide must document {contract}",
+                failures)
+    for path, content in [("README.md", readme), ("VISION.md", vision), ("SECURITY.md", security)]:
+        require("docs/BACKEND_CONFIGURATION.md" in content,
+                f"{path} must link the backend configuration and data-flow guide",
+                failures)
+
     for path, content in [("README.md", readme), ("VISION.md", vision), ("SECURITY.md", security)]:
         require("make lint" in content and "make test" in content and "make build" in content and
                 "make check" in content and "ServiceKeys.xcconfig.example" in content,
@@ -1225,6 +1274,11 @@ def main():
     require("status: completed" in beacon_publication_plan and
             "make check" in beacon_publication_plan,
             "beacon publication guard plan must be completed and document make check",
+            failures)
+    require("status: completed" in backend_configuration_plan and
+            "make check" in backend_configuration_plan and
+            "hostile mutations" in backend_configuration_plan,
+            "configured backend endpoint plan must record completed verification",
             failures)
     require("status: completed" in make_gate_plan,
             "Make gate alias plan must be marked completed",
