@@ -48,7 +48,9 @@ Helpful reports include:
 - Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, phone identity data, messages, and location data should stay out of git.
 - Use `WhineLocation/ServiceKeys.xcconfig.example` as a placeholder template for local service credentials.
 - Plist-backed endpoint lookup through `getInfo` should fail closed instead of force-unwrapping missing local configuration.
-- Message read-state updates should guard Digits session lookup and remote array parsing before posting changes.
+- Read-state publication ownership should persist remote state only after a
+  validated backend success and must retain the originating Digits user ID
+  across the asynchronous response.
 - Digits user ID normalization should reject blank session IDs before local message read-state storage changes.
 - The Digits login success guard should prevent failed authentication callbacks from storing identity or opening the partner flow.
 - The new partner user guard should require a normalized Digits user ID and nonblank partner number before posting partner requests.

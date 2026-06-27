@@ -420,6 +420,7 @@ def main():
     spaced_make_plan = read("docs/plans/2026-06-21-spaced-makefile-path.md")
     make_path_syntax_plan = read("docs/plans/2026-06-25-makefile-path-syntax-rejection.md")
     beacon_publication_plan = read("docs/plans/2026-06-26-beacon-publication-guard.md")
+    read_state_publication_plan = read("docs/plans/2026-06-26-read-state-publication-ownership.md")
     backend_configuration_path = ROOT / "docs/BACKEND_CONFIGURATION.md"
     backend_configuration = backend_configuration_path.read_text(encoding="utf-8") if backend_configuration_path.exists() else ""
     backend_configuration_plan = read("docs/plans/2026-06-26-configured-backend-endpoints.md")
@@ -477,6 +478,34 @@ def main():
             failures)
     require('Alamofire.request(.POST' in messages and 'getInfo("pulseListReadUrl")' in messages,
             "message read-state updates must use configured POST endpoint pulseListReadUrl",
+            failures)
+    set_read_start = messages.find("func setRead")
+    compare_read_start = messages.find("func compareRead")
+    current_user_start = messages.find("func currentDigitsUserID")
+    set_read_method = messages[set_read_start:compare_read_start]
+    compare_read_method = messages[compare_read_start:current_user_start]
+    require("func setRead(data: AnyObject, userId: String)" in set_read_method and
+            "defaults.setObject(data, forKey: userId)" in set_read_method and
+            "currentDigitsUserID()" not in set_read_method and
+            "setRead(remoteReadState, userId: userId)" in compare_read_method,
+            "message read-state persistence must retain the originating Digits user ID",
+            failures)
+    read_request = '''let request = Alamofire.request(.POST,
+            getInfo("pulseListReadUrl"),
+            parameters:["data": remoteReadState, "userId": userId],
+            encoding: .JSON).validate(statusCode: 200..<300)'''
+    read_request_index = compare_read_method.find(read_request)
+    read_response_index = compare_read_method.find(
+        "request.responseJSON { (req, res, json, error) in"
+    )
+    read_success_index = compare_read_method.find("guard error == nil else")
+    read_persistence_index = compare_read_method.find(
+        "setRead(remoteReadState, userId: userId)"
+    )
+    require(read_request_index >= 0 and
+            read_request_index < read_response_index < read_success_index < read_persistence_index and
+            compare_read_method.count("setRead(remoteReadState, userId: userId)") == 1,
+            "message read-state publication must wait for validated backend success",
             failures)
     require("requestlabs.appspot.com" not in swift_sources,
             "executable Swift must not retain the historical App Engine backend host",
@@ -1137,6 +1166,9 @@ def main():
         require("read-state" in content.lower(),
                 f"{path} must document message read-state guardrails",
                 failures)
+        require("read-state publication ownership" in content.lower(),
+                f"{path} must document read-state publication ownership",
+                failures)
         require("digits user id normalization" in content.lower(),
                 f"{path} must document Digits user ID normalization",
                 failures)
@@ -1206,6 +1238,9 @@ def main():
     require("beacon identity and redundant-write correctness" in changes.lower(),
             "CHANGES must record beacon publication hardening",
             failures)
+    require("read-state publication ownership" in changes.lower(),
+            "CHANGES must record read-state publication ownership",
+            failures)
     require("beacon publication guard" in readme.lower() and
             "changed proximity" in security.lower() and
             "identity-bound" in vision.lower(),
@@ -1261,6 +1296,9 @@ def main():
             failures)
     require("status: completed" in read_state_plan,
             "message read-state guard plan must be marked completed",
+            failures)
+    require("status: completed" in read_state_publication_plan,
+            "read-state publication ownership plan must be marked completed",
             failures)
     require("status: completed" in user_id_plan,
             "Digits user ID normalization plan must be marked completed",
