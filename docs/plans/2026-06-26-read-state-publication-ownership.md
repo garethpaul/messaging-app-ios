@@ -19,12 +19,14 @@ change could persist one user's state under another user's key.
 - Pass the captured user ID into the cache helper instead of looking up the
   current session again.
 - Leave failed publications uncached so a later pulse refresh retries them.
+- Advance a publication generation for every valid remote observation and
+  reject successful callbacks that a newer observation has superseded.
 
 ## Test-First Plan
 
 1. Add a current-source contract for validated success and captured identity.
-2. Add hostile mutations for missing validation, eager persistence, and
-   asynchronous identity re-read.
+2. Add hostile mutations for missing validation, eager persistence,
+   asynchronous identity re-read, and missing or late generation guards.
 3. Run the current-source contract to record the RED failure.
 4. Implement the minimal request and cache-helper changes.
 5. Update public guidance, agent guidance, and `CHANGES.md`.
@@ -38,7 +40,9 @@ The read-state POST now validates successful HTTP statuses and persists only
 after its response succeeds. The completion passes the originating normalized
 Digits user ID to `setRead`, while failures leave local state unchanged for a
 future retry. The checker rejects missing validation, eager persistence, and
-session re-reading in the cache helper.
+session re-reading in the cache helper. A monotonic generation captured before
+publication now prevents an older response from overwriting state observed by
+a newer refresh, including when that newer state already matches the cache.
 
 ## Verification Completed
 

@@ -69,7 +69,8 @@ sample built around Digits identity, Parse-backed data, and partner pulses.
 - Do not commit Fabric API keys, Crashlytics build secrets, Parse credentials, signing material, message fixtures, phone identity data, or location data.
 - Message read-state changes should preserve guarded Digits session lookup and array casts.
 - Read-state publication ownership must cache only after validated backend
-  success and retain the originating Digits user ID across callbacks.
+  success, retain the originating Digits user ID across callbacks, and reject
+  callbacks superseded by a newer observation.
 - Digits user ID normalization should continue to reject blank session IDs before writing local read-state data.
 - The Digits login success guard should keep failed authentication callbacks from storing identity or opening the partner flow.
 - Beacon publications must require a normalized Digits user ID and a changed

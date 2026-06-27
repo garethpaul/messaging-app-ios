@@ -11,6 +11,7 @@ import Alamofire
 import DigitsKit
 
 let defaults = NSUserDefaults.standardUserDefaults()
+private var readStatePublicationGeneration = 0
 
 func setRead(data: AnyObject, userId: String) {
     defaults.setObject(data, forKey: userId)
@@ -22,6 +23,9 @@ func compareRead(data:AnyObject!) {
             return
     }
 
+    readStatePublicationGeneration += 1
+    let publicationGeneration = readStatePublicationGeneration
+
     let localReadState = defaults.objectForKey(userId) as? NSArray ?? NSArray()
 
     if localReadState != remoteReadState {
@@ -31,6 +35,10 @@ func compareRead(data:AnyObject!) {
             encoding: .JSON).validate(statusCode: 200..<300)
         request.responseJSON { (req, res, json, error) in
             guard error == nil else {
+                return
+            }
+
+            guard publicationGeneration == readStatePublicationGeneration else {
                 return
             }
 

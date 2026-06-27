@@ -499,6 +499,15 @@ def main():
         "request.responseJSON { (req, res, json, error) in"
     )
     read_success_index = compare_read_method.find("guard error == nil else")
+    read_generation_increment_index = compare_read_method.find(
+        "readStatePublicationGeneration += 1"
+    )
+    read_generation_capture_index = compare_read_method.find(
+        "let publicationGeneration = readStatePublicationGeneration"
+    )
+    read_generation_guard_index = compare_read_method.find(
+        "guard publicationGeneration == readStatePublicationGeneration else"
+    )
     read_persistence_index = compare_read_method.find(
         "setRead(remoteReadState, userId: userId)"
     )
@@ -506,6 +515,16 @@ def main():
             read_request_index < read_response_index < read_success_index < read_persistence_index and
             compare_read_method.count("setRead(remoteReadState, userId: userId)") == 1,
             "message read-state publication must wait for validated backend success",
+            failures)
+    require("private var readStatePublicationGeneration = 0" in messages and
+            0 <= read_generation_increment_index < read_generation_capture_index <
+            read_request_index < read_response_index < read_success_index <
+            read_generation_guard_index < read_persistence_index and
+            compare_read_method.count("readStatePublicationGeneration += 1") == 1 and
+            compare_read_method.count(
+                "guard publicationGeneration == readStatePublicationGeneration else"
+            ) == 1,
+            "message read-state persistence must reject superseded publication callbacks",
             failures)
     require("requestlabs.appspot.com" not in swift_sources,
             "executable Swift must not retain the historical App Engine backend host",

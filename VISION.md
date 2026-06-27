@@ -92,7 +92,8 @@ through local or CI build settings, not committed Xcode project literals.
 Message read-state updates should keep guarded Digits session lookup, Digits
 user ID normalization, and remote array parsing before posting state changes.
 Read-state publication ownership should cache state only after validated
-backend success and keep asynchronous writes tied to the originating identity.
+backend success, keep asynchronous writes tied to the originating identity,
+and reject callbacks superseded by a newer read-state observation.
 The Digits login success guard should prevent failed authentication callbacks
 from opening identity-backed app flows.
 The new partner user guard should keep partner requests tied to normalized
