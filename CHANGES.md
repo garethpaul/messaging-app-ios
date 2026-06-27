@@ -14,8 +14,11 @@
 - The seven focused read-state contracts pass. Authenticated root and
   external-directory `make check` each pass all 97 isolated tests with two
   expected GNU Make capability skips; direct Python compilation and
-  `git diff --check` pass. `xcodebuild` is unavailable locally. Hosted,
-  exact-head review, merge, and post-merge evidence remain pending.
+  `git diff --check` pass. `xcodebuild` is unavailable locally. Required
+  `codex review --base origin/master` was attempted on implementation head
+  `b5df392` but failed before analysis with OpenAI HTTP 401 authentication
+  errors. Hosted, immutable final-head review, merge, and post-merge evidence
+  remain pending.
 
 ## 2026-06-26 18:19 PDT — P1 read-state publication ownership
 
