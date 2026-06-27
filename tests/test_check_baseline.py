@@ -49,6 +49,10 @@ BEACON_REQUEST = (
     'Alamofire.request(.POST, getInfo("beaconUrl"), '
     'parameters: ["beacon": region.identifier, "userId": userId])'
 )
+READ_STATE_REQUEST = '''let request = Alamofire.request(.POST,
+            getInfo("pulseListReadUrl"),
+            parameters:["data": remoteReadState, "userId": userId],
+            encoding: .JSON).validate(statusCode: 200..<300)'''
 PROTECTED_HASHES = {
     "WhineLocation/HomeTimeViewController.swift":
         "0d4410f43629b517b0fa7b0801b728ebeb33d23e046c6791827b63ea31a3f594",
@@ -828,6 +832,9 @@ class HomeTimeValidationContractTests(unittest.TestCase):
     def source(self, relative_path):
         return self.snapshot_root / relative_path
 
+    def messages_source(self):
+        return self.source("WhineLocation/Messages.swift")
+
     def replace_source(self, relative_path, current, replacement):
         source_path = self.source(relative_path)
         source = source_path.read_text(encoding="utf-8")
@@ -867,6 +874,58 @@ class HomeTimeValidationContractTests(unittest.TestCase):
 
     def assert_independent_contract_rejects(self):
         self.assertTrue(self.independent_contract_failures())
+
+    def test_current_read_state_publication_waits_for_validated_success(self):
+        source = self.messages_source().read_text(encoding="utf-8")
+        self.assertIn("func setRead(data: AnyObject, userId: String)", source)
+        self.assertIn(READ_STATE_REQUEST, source)
+        self.assertIn("request.responseJSON { (req, res, json, error) in", source)
+        self.assertIn("guard error == nil else", source)
+        self.assertIn("setRead(remoteReadState, userId: userId)", source)
+        return_code, _, standard_error = self.run_checker()
+        self.assertEqual(0, return_code, standard_error)
+
+    def test_checker_rejects_unvalidated_read_state_publication(self):
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            ").validate(statusCode: 200..<300)",
+            ")",
+        )
+        self.assert_checker_rejects_with(
+            "message read-state publication must wait for validated backend success"
+        )
+
+    def test_checker_rejects_eager_read_state_persistence(self):
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            "        request.responseJSON { (req, res, json, error) in\n",
+            "        setRead(remoteReadState, userId: userId)\n"
+            "        request.responseJSON { (req, res, json, error) in\n",
+        )
+        self.assert_checker_rejects_with(
+            "message read-state publication must wait for validated backend success"
+        )
+
+    def test_checker_rejects_read_state_identity_reread(self):
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            '''func setRead(data: AnyObject, userId: String) {
+    defaults.setObject(data, forKey: userId)
+}''',
+            '''func setRead(data: AnyObject) {
+    if let userId = currentDigitsUserID() {
+        defaults.setObject(data, forKey: userId)
+    }
+}''',
+        )
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            "setRead(remoteReadState, userId: userId)",
+            "setRead(remoteReadState)",
+        )
+        self.assert_checker_rejects_with(
+            "message read-state persistence must retain the originating Digits user ID"
+        )
 
     def test_current_source_validates_http_status_before_response_json(self):
         source = self.home_time_source().read_text(encoding="utf-8")

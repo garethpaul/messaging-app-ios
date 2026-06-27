@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SANITIZED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 VALIDATION_ROOT_PATH = "scripts/verify-validation-chain.py"
 EXPECTED_HASHES = {
-    "scripts/run-isolated-tests.py": "1e529bc5f9eaa0ec7255adf8957f213ebb7aa31db0adb91b76b09793c917d3f5",
+    "scripts/run-isolated-tests.py": "9fab15f65d93e164d2b1d0fa9ddab55fab51a110daf36d9bb710b12d47b9bb34",
 }
 
 

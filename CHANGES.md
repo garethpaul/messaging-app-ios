@@ -1,5 +1,33 @@
 # Changes
 
+## 2026-06-26 18:19 PDT — P1 read-state publication ownership
+
+- Found that `compareRead` cached remote read state immediately after starting
+  its POST, so transport or non-2xx failures suppressed later retries.
+- Found that the asynchronous cache path re-read the current Digits session,
+  allowing an account change during the request to bind the completed state to
+  the wrong local user key.
+- Added successful-status validation and moved persistence into the successful
+  response callback. The cache helper now requires the originating normalized
+  Digits user ID captured before publication.
+- Added a fail-closed checker contract and hostile mutations for missing HTTP
+  validation, eager cache writes, and asynchronous identity re-reading. The
+  focused current-source test first failed against the old eager write; the
+  repaired source and all three mutations pass.
+- Added the completed read-state publication ownership plan and synchronized
+  README, security, vision, and agent guidance.
+- All 94 isolated tests pass with two expected GNU Make capability skips.
+  Authenticated `make lint`, `make test`, `make build`, and `make check` pass
+  from the repository, and external-directory `make check`, direct validation,
+  Python compilation, and `git diff --check` pass. `xcodebuild` is unavailable
+  locally. Hosted push run 28274377109, pull-request run 28274377982, and PR
+  analysis/CodeQL run 28274378068 pass on implementation head `00be76a`.
+- Required `codex review --base origin/master` was attempted on that exact
+  head but failed before analysis with OpenAI HTTP 401 authentication errors.
+  An immutable manual review confirmed the PR head, request validation,
+  success-before-persistence ordering, captured identity, mutation coverage,
+  and clean diff with no actionable finding.
+
 ## 2026-06-26 04:32 PDT — P1 configured backend and privacy boundary
 
 - Found three state-changing Swift requests that bypassed the placeholder-safe

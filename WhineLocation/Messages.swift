@@ -12,10 +12,8 @@ import DigitsKit
 
 let defaults = NSUserDefaults.standardUserDefaults()
 
-func setRead(data: AnyObject) {
-    if let userId = currentDigitsUserID() {
-        defaults.setObject(data, forKey: userId)
-    }
+func setRead(data: AnyObject, userId: String) {
+    defaults.setObject(data, forKey: userId)
 }
 
 func compareRead(data:AnyObject!) {
@@ -27,11 +25,17 @@ func compareRead(data:AnyObject!) {
     let localReadState = defaults.objectForKey(userId) as? NSArray ?? NSArray()
 
     if localReadState != remoteReadState {
-        Alamofire.request(.POST,
+        let request = Alamofire.request(.POST,
             getInfo("pulseListReadUrl"),
             parameters:["data": remoteReadState, "userId": userId],
-            encoding: .JSON)
-        setRead(remoteReadState)
+            encoding: .JSON).validate(statusCode: 200..<300)
+        request.responseJSON { (req, res, json, error) in
+            guard error == nil else {
+                return
+            }
+
+            setRead(remoteReadState, userId: userId)
+        }
     }
 } // end compare read
 
