@@ -927,6 +927,56 @@ class HomeTimeValidationContractTests(unittest.TestCase):
             "message read-state persistence must retain the originating Digits user ID"
         )
 
+    def test_current_read_state_publication_rejects_superseded_callbacks(self):
+        source = self.messages_source().read_text(encoding="utf-8")
+        self.assertIn("private var readStatePublicationGeneration = 0", source)
+        self.assertIn("readStatePublicationGeneration += 1", source)
+        self.assertIn(
+            "let publicationGeneration = readStatePublicationGeneration",
+            source,
+        )
+        self.assertIn(
+            "guard publicationGeneration == readStatePublicationGeneration else",
+            source,
+        )
+        return_code, _, standard_error = self.run_checker()
+        self.assertEqual(0, return_code, standard_error)
+
+    def test_checker_rejects_missing_read_state_generation_guard(self):
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            '''            guard publicationGeneration == readStatePublicationGeneration else {
+                return
+            }
+
+''',
+            "",
+        )
+        self.assert_checker_rejects_with(
+            "message read-state persistence must reject superseded publication callbacks"
+        )
+
+    def test_checker_rejects_late_read_state_generation_increment(self):
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            '''    readStatePublicationGeneration += 1
+    let publicationGeneration = readStatePublicationGeneration
+
+    let localReadState''',
+            '''    let publicationGeneration = readStatePublicationGeneration
+
+    let localReadState''',
+        )
+        self.replace_source(
+            "WhineLocation/Messages.swift",
+            "        let request = Alamofire.request(.POST,",
+            "        readStatePublicationGeneration += 1\n"
+            "        let request = Alamofire.request(.POST,",
+        )
+        self.assert_checker_rejects_with(
+            "message read-state persistence must reject superseded publication callbacks"
+        )
+
     def test_current_source_validates_http_status_before_response_json(self):
         source = self.home_time_source().read_text(encoding="utf-8")
         self.assertIn(STATUS_VALIDATED_RESPONSE, source)

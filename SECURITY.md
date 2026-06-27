@@ -50,7 +50,8 @@ Helpful reports include:
 - Plist-backed endpoint lookup through `getInfo` should fail closed instead of force-unwrapping missing local configuration.
 - Read-state publication ownership should persist remote state only after a
   validated backend success and must retain the originating Digits user ID
-  across the asynchronous response.
+  across the asynchronous response. A newer observation must invalidate older
+  callbacks before they can persist stale state.
 - Digits user ID normalization should reject blank session IDs before local message read-state storage changes.
 - The Digits login success guard should prevent failed authentication callbacks from storing identity or opening the partner flow.
 - The new partner user guard should require a normalized Digits user ID and nonblank partner number before posting partner requests.

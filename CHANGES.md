@@ -1,5 +1,22 @@
 # Changes
 
+## 2026-06-26 18:36 PDT — P1 read-state callback ordering
+
+- Found that overlapping successful read-state POSTs could complete out of
+  order and let an older callback overwrite the cache after a newer pulse
+  refresh had observed different state.
+- Added a monotonic publication generation that advances for every valid
+  remote observation, is captured before starting a changed-state POST, and
+  must still be current before the successful callback persists locally.
+- Added a current-source contract and hostile mutations for a missing guard or
+  an increment moved too late to invalidate already-running publications.
+- Updated read-state ownership guidance and the completed implementation plan.
+- The seven focused read-state contracts pass. Authenticated root and
+  external-directory `make check` each pass all 97 isolated tests with two
+  expected GNU Make capability skips; direct Python compilation and
+  `git diff --check` pass. `xcodebuild` is unavailable locally. Hosted,
+  exact-head review, merge, and post-merge evidence remain pending.
+
 ## 2026-06-26 18:19 PDT — P1 read-state publication ownership
 
 - Found that `compareRead` cached remote read state immediately after starting

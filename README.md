@@ -72,7 +72,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   historical App Engine host.
 - Read-state publication ownership caches remote state only after a validated
   backend success and keeps the write keyed to the originating Digits user;
-  failures remain eligible for retry.
+  failures remain eligible for retry, and superseded callbacks cannot regress
+  the cache after a newer refresh.
 - Digits user ID normalization trims session IDs and skips blank values before message read-state storage changes.
 - A Digits login success guard keeps failed authentication callbacks out of the partner flow and stores only normalized user IDs.
 - The location share user guard skips location POSTs when no normalized Digits user ID is available.
